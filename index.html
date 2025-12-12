@@ -720,6 +720,7 @@
             if (time / DURATION > 0.93 && !finalScreen.classList.contains('visible')) {
                 finalScreen.classList.add('visible');
                 skipBtn.style.display = 'none';
+                sessionStorage.setItem('animationSeen', 'true');
             }
         }
 
@@ -736,17 +737,29 @@
             ctx.fillRect(0, 0, W, H);
             finalScreen.classList.add('visible');
             skipBtn.style.display = 'none';
+            sessionStorage.setItem('animationSeen', 'true');
         };
 
         initWorld();
-        animate();
-        
-        // Show skip button after 2 seconds
-        setTimeout(() => {
-            if (!finalScreen.classList.contains('visible')) {
-                skipBtn.style.display = 'block';
-            }
-        }, 2000);
+
+        // Check if animation was already seen this session
+        if (sessionStorage.getItem('animationSeen')) {
+            // Skip animation, show final screen immediately
+            isPlaying = false;
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, W, H);
+            canvas.style.display = 'none';
+            finalScreen.classList.add('visible');
+        } else {
+            animate();
+
+            // Show skip button after 2 seconds
+            setTimeout(() => {
+                if (!finalScreen.classList.contains('visible')) {
+                    skipBtn.style.display = 'block';
+                }
+            }, 2000);
+        }
     </script>
 </body>
 </html>
