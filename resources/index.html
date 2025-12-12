@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Resources - Books, tools, and other materials for learning statistics.">
+  <title>Resources | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --card-bg: rgba(255, 255, 255, 0.02);
+      --card-border: rgba(240, 240, 240, 0.1);
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+
+    /* Page Wrapper */
+    .page-wrapper {
+      opacity: 0;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Navigation */
+    .top-nav {
+      padding: 2rem;
+    }
+
+    .back-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Main Content */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 4rem;
+      padding-top: 2rem;
+    }
+
+    .page-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+
+    .page-subtitle {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      font-size: 1.15rem;
+      color: var(--text-muted);
+    }
+
+    /* Section Styles */
+    section {
+      margin-bottom: 4rem;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      margin-bottom: 1.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(78, 204, 163, 0.3);
+    }
+
+    /* Resource Cards */
+    .resource-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.3s var(--ease-in-out), background 0.3s var(--ease-in-out);
+    }
+
+    .resource-card:hover {
+      border-color: rgba(78, 204, 163, 0.25);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .resource-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .resource-title {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .resource-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .resource-meta span {
+      display: inline;
+    }
+
+    .resource-meta .separator {
+      margin: 0 0.5rem;
+      opacity: 0.5;
+    }
+
+    .resource-description {
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .resource-note {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    .resource-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.3s var(--ease-in-out);
+    }
+
+    .resource-link:hover {
+      opacity: 0.8;
+    }
+
+    /* Footer Navigation */
+    .footer-nav {
+      margin-top: 4rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+    }
+
+    .footer-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .footer-link:hover {
+      color: var(--accent);
+    }
+
+    .footer-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      main {
+        padding: 0 1.5rem 4rem;
+      }
+
+      .page-title {
+        font-size: 2.4rem;
+      }
+
+      .page-subtitle {
+        font-size: 1.05rem;
+      }
+
+      .section-title {
+        font-size: 1.35rem;
+      }
+
+      .resource-card {
+        padding: 1.5rem;
+      }
+
+      .resource-title {
+        font-size: 1.15rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+  <!-- Navigation -->
+  <nav class="top-nav">
+    <a href="../series/index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to series
+    </a>
+  </nav>
+
+  <main>
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">Resources</h1>
+      <p class="page-subtitle">Books, tools, and other materials I've found useful</p>
+    </header>
+
+    <!-- Section 1: Books -->
+    <section>
+      <h2 class="section-title">Books</h2>
+
+      <article class="resource-card">
+        <h3 class="resource-title">Field Experiments: Design, Analysis, and Interpretation</h3>
+        <div class="resource-meta">
+          <span>Alan S. Gerber (Yale University) & Donald P. Green (Columbia University)</span>
+          <span class="separator">·</span>
+          <span>W.W. Norton</span>
+        </div>
+        <p class="resource-description">The definitive guide to experimental design in the social sciences. Covers randomization, estimation, and the practical challenges of running experiments in real-world settings.</p>
+        <a href="https://wwnorton.com/books/9780393979954" target="_blank" rel="noopener noreferrer" class="resource-link">
+          View on publisher's site →
+        </a>
+      </article>
+
+      <article class="resource-card">
+        <h3 class="resource-title">All of Statistics: A Concise Course in Statistical Inference</h3>
+        <div class="resource-meta">
+          <span>Larry Wasserman</span>
+          <span class="separator">·</span>
+          <span>Springer, 2010</span>
+        </div>
+        <p class="resource-description">A compact but rigorous overview of statistical theory. Covers probability, inference, and machine learning in one volume. Dense but rewarding.</p>
+        <a href="https://link.springer.com/book/10.1007/978-0-387-21736-9" target="_blank" rel="noopener noreferrer" class="resource-link">
+          View on Springer →
+        </a>
+      </article>
+    </section>
+
+    <!-- Section 2: Videos & Courses -->
+    <section>
+      <h2 class="section-title">Videos & Courses</h2>
+
+      <article class="resource-card">
+        <h3 class="resource-title">3Blue1Brown</h3>
+        <div class="resource-meta">
+          <span>Grant Sanderson</span>
+        </div>
+        <p class="resource-description">The best visual explanations of mathematics on the internet. The linear algebra and calculus series are essential. If you want to understand why formulas work rather than just how to use them, start here.</p>
+        <a href="https://www.3blue1brown.com/" target="_blank" rel="noopener noreferrer" class="resource-link">
+          Visit 3Blue1Brown →
+        </a>
+      </article>
+    </section>
+
+    <!-- Section 3: Interactive Tools -->
+    <section>
+      <h2 class="section-title">Interactive Tools</h2>
+
+      <article class="resource-card">
+        <h3 class="resource-title">PCA Builder & Visualization</h3>
+        <div class="resource-meta">
+          <span>Sacha Bechara</span>
+        </div>
+        <p class="resource-description">Interactive MATLAB tool for learning Principal Component Analysis through hands-on exploration. Manipulate correlations and watch principal components emerge. Built for developing geometric intuition about variance in multiple dimensions.</p>
+        <p class="resource-note">Requires free MathWorks account</p>
+        <a href="https://matlab.mathworks.com/open/github/v1?repo=sachabechara/pca-visualization-tool&file=pca_builder.m" target="_blank" rel="noopener noreferrer" class="resource-link">
+          Open Tool ↗
+        </a>
+      </article>
+    </section>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+      <a href="../series/index.html" class="footer-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to series
+      </a>
+    </nav>
+  </main>
+  </div>
+</body>
+</html>

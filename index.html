@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics: How to Be Wrong (Less Often)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; min-height: 100vh; overflow: hidden; }
+        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        
+        .final-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 1.5s ease;
+        }
+        .final-screen.visible { opacity: 1; pointer-events: auto; }
+        
+        .final-screen .label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(240,240,240,0.6);
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease 0.3s;
+        }
+        .final-screen.visible .label { opacity: 1; transform: translateY(0); }
+        
+        .final-screen .title {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(3rem, 9vw, 6rem);
+            font-weight: 300;
+            font-style: italic;
+            color: #4ecca3;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s ease 0.5s;
+        }
+        .final-screen.visible .title { opacity: 1; transform: translateY(0); }
+        
+        .final-screen .subtitle {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 300;
+            color: rgba(240,240,240,0.75);
+            margin-top: 0.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease 0.8s;
+        }
+        .final-screen.visible .subtitle { opacity: 1; transform: translateY(0); }
+        .final-screen .subtitle em { font-style: italic; color: rgba(240,240,240,0.95); }
+        
+        .final-screen .curve-container {
+            width: 90%; max-width: 600px; height: 180px; margin: 3rem 0;
+            opacity: 0; transition: opacity 1s ease 1.2s;
+        }
+        .final-screen.visible .curve-container { opacity: 1; }
+        
+        .final-screen .curve-path {
+            fill: none; stroke: #4ecca3; stroke-width: 2.5; stroke-linecap: round;
+            stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            filter: drop-shadow(0 0 8px rgba(78, 204, 163, 0.4));
+        }
+        .final-screen.visible .curve-path { animation: drawCurve 2s ease-out 1.5s forwards; }
+        
+        .final-screen .curve-fill { fill: url(#curveGradient); opacity: 0; }
+        .final-screen.visible .curve-fill { animation: fadeIn 1s ease-out 3s forwards; }
+        
+        .final-screen .axis-line { stroke: rgba(240,240,240,0.3); stroke-width: 1; }
+        
+        .final-screen .mu-line {
+            stroke: rgba(240,240,240,0.5);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+            opacity: 0;
+        }
+        .final-screen.visible .mu-line { animation: fadeIn 0.5s ease-out 3.3s forwards; }
+        
+        .final-screen .tick-label {
+            font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+            fill: rgba(240,240,240,0.6); opacity: 0;
+        }
+        .final-screen.visible .tick-label { animation: fadeIn 0.5s ease-out forwards; }
+        .final-screen .tick-1 { animation-delay: 3.2s; }
+        .final-screen .tick-2 { animation-delay: 3.4s; }
+        .final-screen .tick-3 { animation-delay: 3.6s; }
+        
+        .final-screen .xbar-label {
+            opacity: 0;
+        }
+        .final-screen.visible .xbar-label { animation: fadeIn 0.5s ease-out 3.5s forwards; }
+        
+        .final-screen .xbar-text {
+            font-family: 'Fraunces', serif; font-size: 18px;
+            fill: #4ecca3;
+        }
+        
+        .final-screen .xbar-line {
+            stroke: #4ecca3;
+            stroke-width: 1.5;
+        }
+        
+        .final-screen .author {
+            font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem;
+            color: rgba(240,240,240,0.65); text-align: center;
+            opacity: 0; transition: opacity 1s ease 4s;
+        }
+        .final-screen.visible .author { opacity: 1; }
+        
+        .final-screen .menu {
+            display: flex; gap: 1.5rem; margin-top: 2.5rem;
+            opacity: 0; transition: opacity 1s ease 4.5s;
+        }
+        .final-screen.visible .menu { opacity: 1; }
+        
+        .final-screen .menu button {
+            font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;
+            letter-spacing: 0.15em; text-transform: uppercase;
+            padding: 0.9rem 1.8rem; border: 1px solid rgba(240,240,240,0.2);
+            border-radius: 2px; background: transparent; color: rgba(240,240,240,0.7);
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .final-screen .menu button:hover {
+            color: #f0f0f0; border-color: #4ecca3;
+            box-shadow: 0 0 20px rgba(78, 204, 163, 0.2);
+        }
+        .final-screen .menu button.primary { background: #4ecca3; border-color: #4ecca3; color: #0a0a0a; }
+        .final-screen .menu button.primary:hover { background: transparent; color: #4ecca3; }
+        
+        @keyframes drawCurve { to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        
+        .skip { 
+            position: fixed; bottom: 1.5rem; right: 1.5rem; 
+            font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            color: rgba(240,240,240,0.85); 
+            background: rgba(30,30,30,0.9); 
+            border: 1px solid rgba(78, 204, 163, 0.4);
+            border-radius: 4px;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer; z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .skip:hover { 
+            color: #fff; 
+            border-color: rgba(78, 204, 163, 0.8);
+            background: rgba(78, 204, 163, 0.15);
+            box-shadow: 0 2px 15px rgba(78, 204, 163, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="final-screen" id="finalScreen">
+        <p class="label">Learning Resources</p>
+        <h1 class="title">Statistics</h1>
+        <p class="subtitle">How to Be Wrong <em>(Less Often)</em></p>
+        
+        <div class="curve-container">
+            <svg width="100%" height="100%" viewBox="0 0 600 180" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color: rgba(78, 204, 163, 0.25)"/>
+                        <stop offset="100%" style="stop-color: rgba(78, 204, 163, 0)"/>
+                    </linearGradient>
+                </defs>
+                
+                <line class="axis-line" x1="30" y1="150" x2="570" y2="150"/>
+                <line class="mu-line" x1="300" y1="150" x2="300" y2="20"/>
+                
+                <path class="curve-fill" d="M 30 150 
+                    C 80 150, 120 148, 160 140 
+                    C 200 130, 230 100, 260 60 
+                    C 280 35, 290 22, 300 18 
+                    C 310 22, 320 35, 340 60 
+                    C 370 100, 400 130, 440 140 
+                    C 480 148, 520 150, 570 150 Z"/>
+                
+                <path class="curve-path" d="M 30 150 
+                    C 80 150, 120 148, 160 140 
+                    C 200 130, 230 100, 260 60 
+                    C 280 35, 290 22, 300 18 
+                    C 310 22, 320 35, 340 60 
+                    C 370 100, 400 130, 440 140 
+                    C 480 148, 520 150, 570 150"/>
+                
+                <text class="tick-label tick-1" x="200" y="168" text-anchor="middle">-σ</text>
+                <text class="tick-label tick-2" x="300" y="168" text-anchor="middle">μ</text>
+                <text class="tick-label tick-3" x="400" y="168" text-anchor="middle">+σ</text>
+                
+                <!-- x-bar with proper bar on top -->
+                <g class="xbar-label">
+                    <text class="xbar-text" x="300" y="15" text-anchor="middle">x</text>
+                    <line class="xbar-line" x1="293" y1="4" x2="307" y2="4"/>
+                </g>
+            </svg>
+        </div>
+        
+        <p class="author">by Sacha Bechara</p>
+        
+        <div class="menu">
+            <button onclick="window.location.href='./about/index.html'">About</button>
+            <button class="primary" onclick="window.location.href='./series/index.html'">Enter</button>
+            <button onclick="window.location.href='./resources/index.html'">Resources</button>
+        </div>
+    </div>
+    
+    <button class="skip" id="skip" style="display: none;">skip animation →</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const finalScreen = document.getElementById('finalScreen');
+        const skipBtn = document.getElementById('skip');
+
+        let W, H;
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Smoother easing
+        function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+        function easeIn(t) { return t * t * t; }
+        
+        // Smooth step with configurable edge
+        function smoothstep(edge0, edge1, x) {
+            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+            return t * t * (3 - 2 * t);
+        }
+        
+        function lerp(a, b, t) { return a + (b - a) * t; }
+        
+        // Smooth interpolation between keyframes
+        function smoothLerp(a, b, t) {
+            return lerp(a, b, easeInOut(Math.max(0, Math.min(1, t))));
+        }
+
+        const camera = { x: 0, y: 0, z: 0, rotX: 0, rotY: 0, fov: 600 };
+
+        function project(wx, wy, wz) {
+            let x = wx - camera.x;
+            let y = wy - camera.y;
+            let z = wz - camera.z;
+
+            const cosY = Math.cos(camera.rotY), sinY = Math.sin(camera.rotY);
+            const x2 = x * cosY - z * sinY;
+            const z2 = x * sinY + z * cosY;
+
+            const cosX = Math.cos(-camera.rotX), sinX = Math.sin(-camera.rotX);
+            const y2 = y * cosX - z2 * sinX;
+            const z3 = y * sinX + z2 * cosX;
+
+            if (z3 <= 10) return null;
+            const scale = camera.fov / z3;
+            
+            return { x: W/2 + x2 * scale, y: H/2 - y2 * scale, scale, depth: z3 };
+        }
+
+        const world = {
+            questions: [], coins: [], dice: [], dataPoints: [], bellCurve: null
+        };
+
+        const terrain = {
+            cols: 50, rows: 50,
+            size: 900,
+            startZ: 2000,
+            yBase: -150,
+            mountains: [
+                { cx: 0.5, cy: 0.5, height: 280, sx: 0.13, sy: 0.13 },
+                { cx: 0.25, cy: 0.38, height: 160, sx: 0.09, sy: 0.08 },
+                { cx: 0.77, cy: 0.4, height: 190, sx: 0.08, sy: 0.1 },
+                { cx: 0.33, cy: 0.7, height: 140, sx: 0.07, sy: 0.07 },
+                { cx: 0.72, cy: 0.68, height: 100, sx: 0.06, sy: 0.06 },
+            ]
+        };
+
+        function getTerrainHeight(nx, ny) {
+            let h = 0;
+            for (const m of terrain.mountains) {
+                const dx = (nx - m.cx) / m.sx, dy = (ny - m.cy) / m.sy;
+                h += m.height * Math.exp(-0.5 * (dx*dx + dy*dy));
+            }
+            return h;
+        }
+
+        // Bell curve parameters - used for both curve and data points
+        const BELL_CURVE_X_SCALE = 55;
+        const BELL_CURVE_Y_SCALE = 140;
+        const BELL_CURVE_Y_OFFSET = -30;
+        const BELL_CURVE_Z = 1400;
+
+        function initWorld() {
+            for (let i = 0; i < 7; i++) {
+                world.questions.push({
+                    x: (Math.random() - 0.5) * 350,
+                    y: (Math.random() - 0.5) * 250,
+                    z: 200 + i * 45,
+                    size: 30 + Math.random() * 35,
+                    rot: Math.random() * 0.3 - 0.15
+                });
+            }
+
+            const coinSymbols = ['H', 'T', 'H', 'T', '½', '½'];
+            for (let i = 0; i < 6; i++) {
+                world.coins.push({
+                    x: (i % 2 === 0 ? -1 : 1) * (100 + Math.random() * 70),
+                    y: (Math.random() - 0.5) * 120,
+                    z: 500 + i * 60,
+                    radius: 32 + Math.random() * 15,
+                    symbol: coinSymbols[i],
+                    rotSpeed: 0.012 + Math.random() * 0.015,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            for (let i = 0; i < 5; i++) {
+                world.dice.push({
+                    x: (Math.random() - 0.5) * 280,
+                    y: (Math.random() - 0.5) * 130,
+                    z: 800 + i * 60,
+                    size: 28 + Math.random() * 12,
+                    value: Math.floor(Math.random() * 6) + 1,
+                    rotY: Math.random() * Math.PI,
+                    rotSpeedY: 0.015 + Math.random() * 0.02
+                });
+            }
+
+            // Data points - now using the same scale as the bell curve
+            for (let i = 0; i < 90; i++) {
+                const u1 = Math.random(), u2 = Math.random();
+                const zNorm = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                
+                // Target position uses SAME formula as bell curve
+                const targetX = zNorm * BELL_CURVE_X_SCALE;
+                const targetY = Math.exp(-0.5 * zNorm * zNorm) * BELL_CURVE_Y_SCALE + BELL_CURVE_Y_OFFSET;
+                
+                world.dataPoints.push({
+                    x: (Math.random() - 0.5) * 400,
+                    y: (Math.random() - 0.5) * 280,
+                    z: 1100 + Math.random() * 250,
+                    targetX: targetX,
+                    targetY: targetY,
+                    targetZ: BELL_CURVE_Z,
+                    radius: 3 + Math.random() * 3.5,
+                    green: Math.random() > 0.6,
+                    zNorm
+                });
+            }
+
+            world.bellCurve = { z: BELL_CURVE_Z, points: [] };
+            for (let i = 0; i <= 60; i++) {
+                const t = (i / 60) * 6 - 3;
+                world.bellCurve.points.push({ 
+                    x: t * BELL_CURVE_X_SCALE, 
+                    y: Math.exp(-0.5 * t * t) * BELL_CURVE_Y_SCALE + BELL_CURVE_Y_OFFSET
+                });
+            }
+        }
+
+        let time = 0;
+        let isPlaying = true;
+        const DURATION = 30000;
+
+        // Continuous progress variables (not stepped)
+        let mountainRiseProgress = 0;
+        let bellCurveDrawProgress = 0;
+
+        // Keyframe-based camera for smooth continuous motion
+        const cameraKeyframes = [
+            { t: 0.00, z: 0,    y: 0,   rotX: 0,    rotY: 0 },
+            { t: 0.12, z: 600,  y: 0,   rotX: 0,    rotY: 0 },
+            { t: 0.24, z: 1000, y: 0,   rotX: 0,    rotY: 0 },
+            { t: 0.38, z: 1100, y: 0,   rotX: 0,    rotY: 0 },
+            { t: 0.50, z: 1500, y: 400, rotX: 0.75, rotY: 0 },
+            { t: 0.62, z: 1700, y: 500, rotX: 0.9,  rotY: 0 },
+            { t: 0.80, z: 1850, y: 550, rotX: 0.9,  rotY: 0 },
+            { t: 0.92, z: 2000, y: 580, rotX: 0.8,  rotY: 0 },
+            { t: 1.00, z: 2000, y: 580, rotX: 0.8,  rotY: 0 },
+        ];
+
+        function getCameraState(t) {
+            const p = t / DURATION;
+            
+            // Find surrounding keyframes
+            let k0 = cameraKeyframes[0];
+            let k1 = cameraKeyframes[1];
+            
+            for (let i = 0; i < cameraKeyframes.length - 1; i++) {
+                if (p >= cameraKeyframes[i].t && p <= cameraKeyframes[i + 1].t) {
+                    k0 = cameraKeyframes[i];
+                    k1 = cameraKeyframes[i + 1];
+                    break;
+                }
+            }
+            
+            // Interpolate smoothly between keyframes
+            const segmentProgress = (p - k0.t) / (k1.t - k0.t);
+            const smoothT = easeInOut(Math.max(0, Math.min(1, segmentProgress)));
+            
+            const z = lerp(k0.z, k1.z, smoothT);
+            const y = lerp(k0.y, k1.y, smoothT);
+            const rotX = lerp(k0.rotX, k1.rotX, smoothT);
+            
+            // Gentle sway
+            const rotY = Math.sin(p * Math.PI * 3) * 0.08 * smoothstep(0.5, 0.8, p) * (1 - smoothstep(0.85, 1, p));
+            
+            // Smooth progress for bell curve drawing
+            bellCurveDrawProgress = smoothstep(0.22, 0.38, p);
+            
+            // Smooth progress for mountain rise - starts sooner now (0.38 instead of 0.58)
+            mountainRiseProgress = smoothstep(0.38, 0.65, p);
+            
+            return { x: 0, y, z, rotX, rotY };
+        }
+
+        // Smooth visibility functions - no hard cutoffs
+        function getQuestionAlpha(depth, baseAlpha) {
+            const fadeIn = smoothstep(500, 350, depth);
+            const fadeOut = smoothstep(80, 200, depth);
+            return baseAlpha * fadeIn * fadeOut;
+        }
+
+        function getCoinAlpha(depth, baseAlpha) {
+            const fadeIn = smoothstep(700, 500, depth);
+            const fadeOut = smoothstep(50, 150, depth);
+            return baseAlpha * fadeIn * fadeOut;
+        }
+
+        function getDiceAlpha(depth, baseAlpha) {
+            const fadeIn = smoothstep(650, 450, depth);
+            const fadeOut = smoothstep(50, 150, depth);
+            return baseAlpha * fadeIn * fadeOut;
+        }
+
+        function getDataPointAlpha(depth, baseAlpha) {
+            const fadeIn = smoothstep(1000, 700, depth);
+            const fadeOut = smoothstep(30, 100, depth);
+            return baseAlpha * fadeIn * fadeOut;
+        }
+
+        function getBellCurveAlpha(depth, baseAlpha) {
+            const fadeIn = smoothstep(1000, 600, depth);
+            const fadeOut = smoothstep(50, 200, depth);
+            return baseAlpha * fadeIn * fadeOut * bellCurveDrawProgress;
+        }
+
+        function drawQuestions(alpha) {
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for (const q of world.questions) {
+                const p = project(q.x, q.y, q.z);
+                if (!p) continue;
+                const a = getQuestionAlpha(p.depth, alpha);
+                if (a < 0.01) continue;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(q.rot + Math.sin(time * 0.001 + q.z) * 0.08);
+                ctx.font = `300 ${q.size * p.scale}px "Crimson Pro", serif`;
+                ctx.fillStyle = `rgba(240, 240, 240, ${a * 0.7})`;
+                ctx.fillText('?', 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function drawCoins(alpha) {
+            for (const c of world.coins) {
+                const bobY = Math.sin(time * 0.002 + c.phase) * 12;
+                const p = project(c.x, c.y + bobY, c.z);
+                if (!p) continue;
+                const a = getCoinAlpha(p.depth, alpha);
+                if (a < 0.01) continue;
+                
+                const wobble = Math.sin(time * c.rotSpeed + c.phase);
+                const scaleX = 0.3 + Math.abs(wobble) * 0.7;
+                const r = c.radius * p.scale;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.scale(scaleX, 1);
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.strokeStyle = c.symbol === '½' ? `rgba(240,240,240,${a*0.6})` : `rgba(78,204,163,${a})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                if (scaleX > 0.5) {
+                    ctx.font = `${r * 0.65}px "Crimson Pro", serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = c.symbol === '½' ? `rgba(240,240,240,${a*0.6})` : `rgba(78,204,163,${a})`;
+                    ctx.fillText(c.symbol, 0, 0);
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawDice(alpha) {
+            for (const d of world.dice) {
+                d.rotY += d.rotSpeedY;
+                const bobY = Math.sin(time * 0.001 + d.x) * 10;
+                const p = project(d.x, d.y + bobY, d.z);
+                if (!p) continue;
+                const a = getDiceAlpha(p.depth, alpha);
+                if (a < 0.01) continue;
+                
+                const size = d.size * p.scale;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(Math.sin(d.rotY) * 0.25);
+                const half = size / 2;
+                ctx.strokeStyle = `rgba(240,240,240,${a})`;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-half, -half, size, size);
+                ctx.fillStyle = `rgba(78,204,163,${a})`;
+                const dotR = size * 0.09;
+                const pos = {
+                    1: [[0,0]], 2: [[-0.25,-0.25],[0.25,0.25]],
+                    3: [[-0.25,-0.25],[0,0],[0.25,0.25]],
+                    4: [[-0.25,-0.25],[0.25,-0.25],[-0.25,0.25],[0.25,0.25]],
+                    5: [[-0.25,-0.25],[0.25,-0.25],[0,0],[-0.25,0.25],[0.25,0.25]],
+                    6: [[-0.25,-0.25],[0.25,-0.25],[-0.25,0],[0.25,0],[-0.25,0.25],[0.25,0.25]]
+                };
+                for (const [dx,dy] of pos[d.value]) {
+                    ctx.beginPath(); ctx.arc(dx*size, dy*size, dotR, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawDataPoints(alpha) {
+            // Smooth gather progress
+            const gatherProg = smoothstep(0.20, 0.38, time / DURATION);
+            
+            for (const dp of world.dataPoints) {
+                const cx = lerp(dp.x, dp.targetX, easeInOut(gatherProg));
+                const cy = lerp(dp.y, dp.targetY, easeInOut(gatherProg));
+                const cz = lerp(dp.z, dp.targetZ, easeInOut(gatherProg));
+                const p = project(cx, cy, cz);
+                if (!p) continue;
+                const a = getDataPointAlpha(p.depth, alpha);
+                if (a < 0.01) continue;
+                const r = dp.radius * p.scale * 0.75;
+                ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1,r), 0, Math.PI*2);
+                ctx.fillStyle = dp.green ? `rgba(78,204,163,${a*0.9})` : `rgba(240,240,240,${a*0.7})`;
+                ctx.fill();
+            }
+        }
+
+        function drawBellCurve(alpha) {
+            if (bellCurveDrawProgress <= 0.01) return;
+            
+            const p0 = project(world.bellCurve.points[0].x, world.bellCurve.points[0].y, world.bellCurve.z);
+            if (!p0) return;
+            const a = getBellCurveAlpha(p0.depth, alpha);
+            if (a < 0.01) return;
+            
+            const pointsToDraw = Math.floor(world.bellCurve.points.length * bellCurveDrawProgress);
+            if (pointsToDraw < 2) return;
+            
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < pointsToDraw; i++) {
+                const pt = world.bellCurve.points[i];
+                const p = project(pt.x, pt.y, world.bellCurve.z);
+                if (!p) continue;
+                if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.strokeStyle = `rgba(78,204,163,${a})`; 
+            ctx.lineWidth = 2.5; 
+            ctx.stroke();
+            
+            // x̄ label fades in smoothly at end - drawn with bar on top
+            const xbarAlpha = smoothstep(0.85, 1.0, bellCurveDrawProgress);
+            if (xbarAlpha > 0.01) {
+                const xbarP = project(0, BELL_CURVE_Y_SCALE + BELL_CURVE_Y_OFFSET + 15, world.bellCurve.z);
+                if (xbarP) {
+                    const fontSize = 20 * xbarP.scale;
+                    ctx.font = `${fontSize}px "Crimson Pro", serif`;
+                    ctx.fillStyle = `rgba(78,204,163,${a * xbarAlpha})`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    // Draw the x
+                    ctx.fillText('x', xbarP.x, xbarP.y);
+                    // Draw the bar on top
+                    const barWidth = fontSize * 0.6;
+                    const barY = xbarP.y - fontSize * 0.55;
+                    ctx.strokeStyle = `rgba(78,204,163,${a * xbarAlpha})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(xbarP.x - barWidth/2, barY);
+                    ctx.lineTo(xbarP.x + barWidth/2, barY);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function drawTerrain(alpha) {
+            // Smooth terrain visibility - starts sooner now (0.38 instead of 0.45)
+            const approachProg = smoothstep(0.38, 0.52, time / DURATION);
+            if (approachProg <= 0.01) return;
+
+            const t = terrain;
+
+            const points = [];
+            for (let j = 0; j <= t.rows; j++) {
+                points[j] = [];
+                for (let i = 0; i <= t.cols; i++) {
+                    const nx = i / t.cols;
+                    const ny = j / t.rows;
+                    const wx = (nx - 0.5) * t.size;
+                    const wz = t.startZ + ny * t.size;
+                    const wy = t.yBase + getTerrainHeight(nx, ny) * mountainRiseProgress;
+                    const p = project(wx, wy, wz);
+                    points[j][i] = p ? { ...p, height: getTerrainHeight(nx, ny) * mountainRiseProgress, ny } : null;
+                }
+            }
+
+            const lines = [];
+
+            for (let j = 0; j <= t.rows; j++) {
+                const pts = points[j].filter(p => p !== null);
+                if (pts.length > 1) {
+                    const avgH = pts.reduce((s,p) => s + p.height, 0) / pts.length;
+                    lines.push({ points: pts, sortKey: j/t.rows, height: avgH });
+                }
+            }
+            for (let i = 0; i <= t.cols; i++) {
+                const pts = [];
+                for (let j = 0; j <= t.rows; j++) if (points[j][i]) pts.push(points[j][i]);
+                if (pts.length > 1) {
+                    const avgH = pts.reduce((s,p) => s + p.height, 0) / pts.length;
+                    const avgNy = pts.reduce((s,p) => s + p.ny, 0) / pts.length;
+                    lines.push({ points: pts, sortKey: avgNy, height: avgH });
+                }
+            }
+
+            lines.sort((a,b) => a.sortKey - b.sortKey);
+
+            for (const line of lines) {
+                ctx.beginPath();
+                let hasVisible = false;
+                for (let k = 0; k < line.points.length; k++) {
+                    const p = line.points[k];
+                    if (p.x < -50 || p.x > W+50 || p.y < -50 || p.y > H+50) continue;
+                    if (!hasVisible) { ctx.moveTo(p.x, p.y); hasVisible = true; }
+                    else ctx.lineTo(p.x, p.y);
+                }
+                if (!hasVisible) continue;
+
+                const hRatio = Math.min(1, line.height / 200);
+                const lineAlpha = alpha * approachProg;
+                
+                if (hRatio > 0.05 && mountainRiseProgress > 0.01) {
+                    const intensity = hRatio * mountainRiseProgress;
+                    ctx.strokeStyle = `rgba(78,204,163,${(0.4 + intensity*0.55) * lineAlpha})`;
+                    ctx.lineWidth = 1 + intensity * 2;
+                } else {
+                    ctx.strokeStyle = `rgba(240,240,240,${0.7 * lineAlpha})`;
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+            }
+
+            // Labels fade in smoothly
+            const labelAlpha = smoothstep(0.65, 0.75, mountainRiseProgress) * approachProg * alpha;
+            if (labelAlpha > 0.01) {
+                const peakP = project(0, t.yBase + 280 * mountainRiseProgress, t.startZ + t.size * 0.5);
+                if (peakP && peakP.y > 20 && peakP.y < H - 20) {
+                    ctx.font = `${Math.max(16, 28 * peakP.scale)}px "Crimson Pro", serif`;
+                    ctx.fillStyle = `rgba(78,204,163,${labelAlpha})`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('μ', peakP.x, peakP.y - 10);
+                }
+
+                ctx.fillStyle = `rgba(78,204,163,${labelAlpha})`;
+                ctx.font = `italic 22px "Crimson Pro", serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('P(x, y)', W/2, H * 0.07);
+                
+                ctx.fillStyle = `rgba(240,240,240,${labelAlpha * 0.6})`;
+                ctx.font = `italic 14px "Crimson Pro", serif`;
+                ctx.fillText('joint probability distribution', W/2, H * 0.07 + 26);
+            }
+        }
+
+        function render() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+
+            const cam = getCameraState(time);
+            camera.x = cam.x; camera.y = cam.y; camera.z = cam.z;
+            camera.rotX = cam.rotX; camera.rotY = cam.rotY;
+
+            // Smooth final fade
+            const fadeAlpha = 1 - smoothstep(0.90, 1.0, time / DURATION);
+
+            drawQuestions(fadeAlpha);
+            drawCoins(fadeAlpha);
+            drawDice(fadeAlpha);
+            drawDataPoints(fadeAlpha);
+            drawBellCurve(fadeAlpha);
+            drawTerrain(fadeAlpha);
+
+            // Final screen appears smoothly
+            if (time / DURATION > 0.93 && !finalScreen.classList.contains('visible')) {
+                finalScreen.classList.add('visible');
+                skipBtn.style.display = 'none';
+            }
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+            time += 16;
+            render();
+            if (time < DURATION + 6000) requestAnimationFrame(animate);
+        }
+
+        skipBtn.onclick = () => {
+            isPlaying = false;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            finalScreen.classList.add('visible');
+            skipBtn.style.display = 'none';
+        };
+
+        initWorld();
+        animate();
+        
+        // Show skip button after 2 seconds
+        setTimeout(() => {
+            if (!finalScreen.classList.contains('visible')) {
+                skipBtn.style.display = 'block';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

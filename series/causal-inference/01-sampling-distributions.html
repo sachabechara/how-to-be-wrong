@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Running It Again - Understanding sampling distributions and why experimental estimates vary. Part of the Causal Inference series.">
+  <title>Running It Again | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scroll Progress Indicator */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* Site Navigation */
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-brand:hover {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      position: fixed;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      z-index: 50;
+    }
+
+    .toc-toggle {
+      display: none;
+    }
+
+    .toc {
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-width: 200px;
+    }
+
+    .toc-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc-list a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: block;
+      padding-left: 0.75rem;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    /* Main Content */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    /* Episode Header */
+    .episode-header {
+      margin-bottom: 4rem;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s backwards;
+    }
+
+    .episode-series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-series-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Article Content */
+    article {
+      color: var(--text-secondary);
+      animation: fadeIn 0.6s var(--ease-in-out) 0.2s backwards;
+    }
+
+    article p {
+      margin-bottom: 1.5rem;
+    }
+
+    article section {
+      margin-bottom: 3rem;
+    }
+
+    article h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    article h3 {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    article em {
+      font-style: italic;
+    }
+
+    /* Visualization Container */
+    .viz-container {
+      margin: 3rem -2rem;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    /* Code/Labels */
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* Visualization Caption */
+    .viz-caption {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .viz-caption-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Histogram Visualization */
+    .histogram-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+
+    .histogram-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .histogram-viz .axis-line {
+      stroke: rgba(240, 240, 240, 0.3);
+      stroke-width: 1;
+    }
+
+    .histogram-viz .axis-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .histogram-viz .axis-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .histogram-viz .tick-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--text-secondary);
+      text-anchor: middle;
+    }
+
+    .histogram-viz .bar {
+      fill: var(--accent);
+      opacity: 0.7;
+      transition: opacity 0.2s var(--ease-in-out);
+    }
+
+    .histogram-viz .bar:hover {
+      opacity: 1;
+    }
+
+    .histogram-viz .bar.new {
+      animation: barGrow 0.3s var(--ease-in-out) forwards;
+    }
+
+    @keyframes barGrow {
+      from {
+        transform: scaleY(0);
+      }
+      to {
+        transform: scaleY(1);
+      }
+    }
+
+    .histogram-viz .true-effect-line {
+      stroke: var(--warning);
+      stroke-width: 2;
+      stroke-dasharray: 6 4;
+    }
+
+    .histogram-viz .true-effect-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--warning);
+    }
+
+    .histogram-viz .experiment-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+    }
+
+    /* Mini experiment animation */
+    .mini-experiment {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 60px;
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-in-out);
+    }
+
+    .mini-experiment.visible {
+      opacity: 1;
+    }
+
+    .mini-experiment .dot {
+      fill: rgba(240, 240, 240, 0.8);
+      transition: all 0.4s var(--ease-in-out);
+    }
+
+    .mini-experiment .dot.treatment {
+      fill: var(--accent);
+    }
+
+    .mini-experiment .dot.control {
+      fill: var(--error);
+    }
+
+    /* Visualization Controls */
+    .viz-controls {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .viz-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-in-out);
+      margin: 0 0.5rem;
+    }
+
+    .viz-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .viz-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .viz-btn:disabled:hover {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .viz-btn.secondary {
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    .viz-btn.secondary:hover {
+      background: var(--text-muted);
+      color: var(--bg);
+    }
+
+    /* Episode Navigation */
+    .episode-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.3s backwards;
+    }
+
+    .episode-nav-link {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      max-width: 45%;
+      padding: 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .episode-nav-link--prev {
+      align-items: flex-start;
+    }
+
+    .episode-nav-link--next {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .episode-nav-direction {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-nav-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover .episode-nav-title {
+      color: var(--text-primary);
+    }
+
+    .episode-nav-link--disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .toc-container {
+        position: fixed;
+        top: auto;
+        bottom: 2rem;
+        right: 2rem;
+        transform: none;
+      }
+
+      .toc-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: var(--bg);
+        border: 1px solid rgba(240, 240, 240, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .toc-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-secondary);
+        transition: stroke 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover svg {
+        stroke: var(--accent);
+      }
+
+      .toc {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-container.open .toc {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+
+      .site-nav {
+        padding: 1rem;
+      }
+
+      .nav-brand {
+        font-size: 0.9rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      main {
+        padding: 6rem 1.5rem 3rem;
+      }
+
+      .episode-title {
+        font-size: 2.2rem;
+      }
+
+      .episode-series-name {
+        font-size: 1rem;
+      }
+
+      .episode-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .viz-container {
+        margin: 2rem -1.5rem;
+        padding: 1.5rem;
+      }
+
+      .episode-nav {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .episode-nav-link {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .episode-nav-link--next {
+        margin-left: 0;
+      }
+
+      .toc-container {
+        bottom: 1rem;
+        right: 1rem;
+      }
+
+      footer {
+        padding: 2rem 1.5rem 3rem;
+      }
+
+      .viz-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .viz-btn {
+        margin: 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+
+      main {
+        padding: 5rem 1rem 2rem;
+      }
+
+      .episode-title {
+        font-size: 1.9rem;
+      }
+
+      .viz-container {
+        margin: 1.5rem -1rem;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Site Navigation -->
+  <nav class="site-nav">
+    <a href="../../index.html" class="nav-brand">Statistics: How to Be Wrong (Less Often)</a>
+    <ul class="nav-links">
+      <li><a href="../index.html">series</a></li>
+      <li><a href="../../resources/index.html">resources</a></li>
+      <li><a href="../../about/index.html">about</a></li>
+    </ul>
+  </nav>
+
+  <!-- Table of Contents -->
+  <aside class="toc-container" id="tocContainer">
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="15" y2="12"></line>
+        <line x1="3" y1="18" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <nav class="toc">
+      <p class="toc-title">In this episode</p>
+      <ul class="toc-list">
+        <li><a href="#uncomfortable-truth">The Uncomfortable Truth</a></li>
+        <li><a href="#watching-it-happen">Watching It Happen</a></li>
+        <li><a href="#why-this-happens">Why Does This Happen?</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <header class="episode-header">
+      <p class="episode-series-label">Series</p>
+      <p class="episode-series-name">Causal Inference</p>
+      <p class="episode-number">Episode 03</p>
+      <h1 class="episode-title">Running It Again</h1>
+      <p class="episode-subtitle">Why your estimate is never the truth</p>
+    </header>
+
+    <article>
+      <section id="uncomfortable-truth">
+        <h2>The Uncomfortable Truth</h2>
+
+        <p>You ran the experiment. You randomly assigned 100 people — 50 to reply immediately, 50 to wait. You measured outcomes. The "wait" group had a 7 percentage point higher success rate.</p>
+
+        <p>Does that mean playing hard to get causes a 7 point increase?</p>
+
+        <p>Here's the uncomfortable truth: if you ran the experiment again, with 100 different people, you'd get a different number. Maybe 4 points. Maybe 11. Maybe negative 2.</p>
+
+        <p>Your single experiment gave you one estimate. But that estimate is not the truth. It's one draw from a distribution of possible estimates.</p>
+      </section>
+
+      <section id="watching-it-happen">
+        <h2>Watching It Happen</h2>
+
+        <p>Let's see this. Suppose the true effect of playing hard to get is exactly 5 percentage points. We'll simulate running the experiment over and over.</p>
+
+        <!-- Histogram Visualization -->
+        <div class="viz-container">
+          <div class="histogram-viz" id="histogramViz">
+            <svg id="histogramSvg" aria-label="Histogram showing distribution of experimental estimates"></svg>
+            <div class="mini-experiment" id="miniExperiment">
+              <svg id="miniExpSvg" width="200" height="60"></svg>
+            </div>
+          </div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="runOneBtn">Run experiment</button>
+            <button class="viz-btn" id="run100Btn" style="display: none;">Run 100 more</button>
+            <button class="viz-btn secondary" id="resetHistogramBtn">Reset</button>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="histogramCaption">Click "Run experiment" to see the distribution emerge.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="why-this-happens">
+        <h2>Why Does This Happen?</h2>
+
+        <p>Random assignment means each experiment gets a different mix of people. One experiment might, by chance, put more confident people in the "wait" group. Another might do the opposite. These chance imbalances push the estimate around.</p>
+
+        <p>This isn't a flaw. It's not something we did wrong. It's the nature of learning from samples. Any finite group of people will differ from any other finite group, even if both were randomly drawn.</p>
+
+        <p>The distribution of estimates you'd get from repeating the experiment is called the <em>sampling distribution</em>. It tells you how much your answer could wiggle based on chance alone.</p>
+      </section>
+    </article>
+
+    <!-- Episode Navigation -->
+    <nav class="episode-nav">
+      <a href="00-75-assumptions.html" class="episode-nav-link episode-nav-link--prev">
+        <span class="episode-nav-direction">Previous</span>
+        <span class="episode-nav-title">What Has to Be True</span>
+      </a>
+      <a href="02-variance.html" class="episode-nav-link episode-nav-link--next">
+        <span class="episode-nav-direction">Next</span>
+        <span class="episode-nav-title">Why Estimates Spread</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>
+    <p class="footer-text">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // Scroll Progress Indicator
+    const scrollProgress = document.getElementById('scrollProgress');
+
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      scrollProgress.style.width = scrollPercent + '%';
+    }
+
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    updateScrollProgress();
+
+    // Table of Contents Toggle (for mobile/tablet)
+    const tocContainer = document.getElementById('tocContainer');
+    const tocToggle = document.getElementById('tocToggle');
+
+    tocToggle.addEventListener('click', () => {
+      tocContainer.classList.toggle('open');
+    });
+
+    // Close TOC when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!tocContainer.contains(e.target)) {
+        tocContainer.classList.remove('open');
+      }
+    });
+
+    // Active section highlighting in TOC
+    const sections = document.querySelectorAll('article section[id]');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 150;
+
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          tocLinks.forEach((link) => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + sectionId) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', highlightActiveSection, { passive: true });
+    highlightActiveSection();
+
+    // Smooth scroll for TOC links
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+          tocContainer.classList.remove('open');
+        }
+      });
+    });
+
+    // =====================
+    // Sampling Distribution Histogram
+    // =====================
+
+    const TRUE_EFFECT = 5;
+    const EFFECT_SD = 4;
+    const BIN_WIDTH = 2;
+    const MIN_X = -10;
+    const MAX_X = 20;
+
+    let experimentCount = 0;
+    let bins = {};
+    let maxBinCount = 0;
+
+    // Initialize bins
+    for (let x = MIN_X; x < MAX_X; x += BIN_WIDTH) {
+      bins[x] = 0;
+    }
+
+    function boxMullerRandom() {
+      // Generate standard normal random numbers using Box-Muller transform
+      let u1 = Math.random();
+      let u2 = Math.random();
+      while (u1 === 0) u1 = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    }
+
+    function generateEstimate() {
+      // Generate a random estimate from normal distribution centered at TRUE_EFFECT
+      return TRUE_EFFECT + boxMullerRandom() * EFFECT_SD;
+    }
+
+    function getBin(value) {
+      // Get the bin for a given value
+      const bin = Math.floor((value - MIN_X) / BIN_WIDTH) * BIN_WIDTH + MIN_X;
+      return Math.max(MIN_X, Math.min(MAX_X - BIN_WIDTH, bin));
+    }
+
+    function createHistogram() {
+      const svg = document.getElementById('histogramSvg');
+      const container = document.getElementById('histogramViz');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      const margin = { top: 40, right: 30, bottom: 50, left: 50 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Scale functions
+      const xScale = (val) => margin.left + ((val - MIN_X) / (MAX_X - MIN_X)) * chartWidth;
+      const yScale = (count) => margin.top + chartHeight - (count / Math.max(maxBinCount, 10)) * chartHeight;
+      const barWidth = (BIN_WIDTH / (MAX_X - MIN_X)) * chartWidth;
+
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + chartHeight}" x2="${margin.left + chartWidth}" y2="${margin.top + chartHeight}" />`;
+
+      // Y-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartHeight}" />`;
+
+      // X-axis ticks and labels
+      for (let x = MIN_X; x <= MAX_X; x += 5) {
+        const xPos = xScale(x);
+        svgContent += `<line class="axis-line" x1="${xPos}" y1="${margin.top + chartHeight}" x2="${xPos}" y2="${margin.top + chartHeight + 5}" />`;
+        svgContent += `<text class="tick-label" x="${xPos}" y="${margin.top + chartHeight + 18}">${x}</text>`;
+      }
+
+      // X-axis title
+      svgContent += `<text class="axis-title" x="${margin.left + chartWidth / 2}" y="${height - 10}">Estimated effect (percentage points)</text>`;
+
+      // Y-axis title
+      svgContent += `<text class="axis-title" x="${15}" y="${margin.top + chartHeight / 2}" transform="rotate(-90, 15, ${margin.top + chartHeight / 2})">Count</text>`;
+
+      // True effect line
+      const trueEffectX = xScale(TRUE_EFFECT);
+      svgContent += `<line class="true-effect-line" x1="${trueEffectX}" y1="${margin.top}" x2="${trueEffectX}" y2="${margin.top + chartHeight}" />`;
+      svgContent += `<text class="true-effect-label" x="${trueEffectX + 5}" y="${margin.top + 15}">True effect = ${TRUE_EFFECT}</text>`;
+
+      // Bars
+      for (let binStart = MIN_X; binStart < MAX_X; binStart += BIN_WIDTH) {
+        const count = bins[binStart] || 0;
+        if (count > 0) {
+          const xPos = xScale(binStart);
+          const barHeight = (count / Math.max(maxBinCount, 10)) * chartHeight;
+          svgContent += `<rect class="bar" x="${xPos}" y="${margin.top + chartHeight - barHeight}" width="${barWidth - 1}" height="${barHeight}" />`;
+        }
+      }
+
+      // Experiment count
+      svgContent += `<text class="experiment-count" x="${margin.left + chartWidth - 10}" y="${margin.top + 20}" text-anchor="end">Experiments run: ${experimentCount}</text>`;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function animateMiniExperiment(callback) {
+      const miniExp = document.getElementById('miniExperiment');
+      const miniSvg = document.getElementById('miniExpSvg');
+
+      if (!miniExp || !miniSvg) {
+        callback();
+        return;
+      }
+
+      // Show mini experiment
+      miniExp.classList.add('visible');
+
+      // Create 20 dots in center
+      let dots = '';
+      const centerX = 100;
+      const centerY = 30;
+
+      for (let i = 0; i < 20; i++) {
+        const angle = (i / 20) * Math.PI * 2;
+        const r = 15 + Math.random() * 10;
+        const x = centerX + Math.cos(angle) * r * 0.3;
+        const y = centerY + Math.sin(angle) * r * 0.5;
+        dots += `<circle class="dot" id="miniDot${i}" cx="${x}" cy="${y}" r="3" />`;
+      }
+
+      miniSvg.innerHTML = dots;
+
+      // Animate dots splitting
+      setTimeout(() => {
+        for (let i = 0; i < 20; i++) {
+          const dot = document.getElementById(`miniDot${i}`);
+          if (dot) {
+            const isLeft = i < 10;
+            const targetX = isLeft ? 40 + (i % 5) * 12 : 140 + (i % 5) * 12;
+            const targetY = 20 + Math.floor((i % 10) / 5) * 20;
+            dot.classList.add(isLeft ? 'treatment' : 'control');
+            dot.setAttribute('cx', targetX);
+            dot.setAttribute('cy', targetY);
+          }
+        }
+      }, 100);
+
+      // Hide and callback
+      setTimeout(() => {
+        miniExp.classList.remove('visible');
+        callback();
+      }, 600);
+    }
+
+    function runOneExperiment(animate = true) {
+      const estimate = generateEstimate();
+      const bin = getBin(estimate);
+
+      const doUpdate = () => {
+        bins[bin] = (bins[bin] || 0) + 1;
+        maxBinCount = Math.max(maxBinCount, bins[bin]);
+        experimentCount++;
+        createHistogram();
+        updateUI();
+      };
+
+      if (animate) {
+        animateMiniExperiment(doUpdate);
+      } else {
+        doUpdate();
+      }
+    }
+
+    function run100Experiments() {
+      const runOneBtn = document.getElementById('runOneBtn');
+      const run100Btn = document.getElementById('run100Btn');
+
+      if (runOneBtn) runOneBtn.disabled = true;
+      if (run100Btn) run100Btn.disabled = true;
+
+      let i = 0;
+      const interval = setInterval(() => {
+        runOneExperiment(false);
+        i++;
+        if (i >= 100) {
+          clearInterval(interval);
+          if (runOneBtn) runOneBtn.disabled = false;
+          if (run100Btn) run100Btn.disabled = false;
+        }
+      }, 30);
+    }
+
+    function resetHistogram() {
+      experimentCount = 0;
+      maxBinCount = 0;
+      for (let x = MIN_X; x < MAX_X; x += BIN_WIDTH) {
+        bins[x] = 0;
+      }
+      createHistogram();
+      updateUI();
+
+      const caption = document.getElementById('histogramCaption');
+      if (caption) {
+        caption.textContent = 'Click "Run experiment" to see the distribution emerge.';
+      }
+    }
+
+    function updateUI() {
+      const run100Btn = document.getElementById('run100Btn');
+      const caption = document.getElementById('histogramCaption');
+
+      // Show "Run 100 more" button after a few experiments
+      if (experimentCount >= 5 && run100Btn) {
+        run100Btn.style.display = 'inline-block';
+      }
+
+      // Update caption based on count
+      if (caption) {
+        if (experimentCount === 1) {
+          caption.textContent = 'One experiment, one estimate. Run it again.';
+        } else if (experimentCount < 10) {
+          caption.textContent = `${experimentCount} experiments. Notice how the estimates vary.`;
+        } else if (experimentCount < 50) {
+          caption.textContent = `${experimentCount} experiments. A shape is emerging.`;
+        } else {
+          caption.textContent = 'Same true effect. Different estimate every time.';
+        }
+      }
+    }
+
+    // Initialize
+    function initHistogram() {
+      createHistogram();
+
+      const runOneBtn = document.getElementById('runOneBtn');
+      const run100Btn = document.getElementById('run100Btn');
+      const resetBtn = document.getElementById('resetHistogramBtn');
+
+      if (runOneBtn) {
+        runOneBtn.addEventListener('click', () => runOneExperiment(true));
+      }
+
+      if (run100Btn) {
+        run100Btn.addEventListener('click', run100Experiments);
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener('click', resetHistogram);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHistogram);
+    } else {
+      initHistogram();
+    }
+
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        createHistogram();
+      }, 200);
+    });
+  </script>
+</body>
+</html>

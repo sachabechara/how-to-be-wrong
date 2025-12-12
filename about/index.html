@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="About Statistics: How to Be Wrong (Less Often) - A collection of visual learning materials for statistics built by Sacha Bechara.">
+  <title>About | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-body: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.8;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background Canvas */
+    #bgCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Page Wrapper */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Navigation */
+    .top-nav {
+      padding: 2rem;
+    }
+
+    .back-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Main Content */
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 5rem;
+      padding-top: 2rem;
+    }
+
+    .page-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      line-height: 1.1;
+    }
+
+    /* Section Styles */
+    section {
+      margin-bottom: 5rem;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.6rem;
+      color: var(--text-primary);
+      margin-bottom: 2rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(78, 204, 163, 0.3);
+    }
+
+    .section-content p {
+      color: var(--text-body);
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .section-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Email link */
+    .section-content a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.3s var(--ease-in-out);
+    }
+
+    .section-content a:hover {
+      opacity: 0.8;
+    }
+
+    /* External Link Card */
+    .link-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(78, 204, 163, 0.3);
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .link-card:hover {
+      background: rgba(78, 204, 163, 0.08);
+      border-color: rgba(78, 204, 163, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .link-card-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .link-card-icon {
+      width: 16px;
+      height: 16px;
+      stroke: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Footer Navigation */
+    .footer-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+    }
+
+    .footer-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .footer-link:hover {
+      color: var(--accent);
+    }
+
+    .footer-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      main {
+        padding: 0 1.5rem 4rem;
+      }
+
+      .page-title {
+        font-size: 2.4rem;
+      }
+
+      .section-title {
+        font-size: 1.4rem;
+      }
+
+      section {
+        margin-bottom: 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Animation Canvas -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="page-wrapper">
+  <!-- Navigation -->
+  <nav class="top-nav">
+    <a href="../series/index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to series
+    </a>
+  </nav>
+
+  <main>
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">About</h1>
+    </header>
+
+    <!-- Section 1: About This Website -->
+    <section>
+      <h2 class="section-title">What This Is</h2>
+      <div class="section-content">
+        <p>This is a collection of materials I've built to teach others, or sometimes just myself. I'm a visual learner and I tend to ask endless questions before accepting a proof, a fact, or a method. Why does this work? What if this assumption fails? Why should I believe this step follows from the last?</p>
+
+        <p>It's tedious. But doing that work means I remember things and can actually manipulate the concepts afterwards, rather than just following procedures I don't understand.</p>
+
+        <p>Most of these materials started as notes for myself or explanations for peers. I thought I'd collect them here into something more coherent. And since visuals are how I learn best, I wanted to make the presentation actually support that kind of learning rather than fight against it.</p>
+
+        <p>I also believe formalism matters. Proofs matter. The mathematics beyond introductory statistics matters. So this website is built to walk in that direction over time. That's why it takes the form of series with multiple episodes, building from intuition toward rigour.</p>
+
+        <p>If there's one principle throughout: these materials treat you as someone who asks questions rather than someone who accepts procedures.</p>
+      </div>
+    </section>
+
+    <!-- Section 2: About Me -->
+    <section>
+      <h2 class="section-title">Who I Am</h2>
+      <div class="section-content">
+        <p>I'm Sacha Bechara. Final-year Politics and International Relations student at University College London.</p>
+
+        <p>I hated mathematics throughout secondary school. Avoided it entirely. I had decided I wasn't a quantitative person and that was that.</p>
+
+        <p>Then in my first year of university I had to take a module covering introductory inferential and descriptive statistics, probability, and epistemology in science. I remember sitting in a lecture being told there's a line of best fit. It minimizes the errors. And thinking: why this line? Where does it come from? Is it magic? Does it just appear out of a computer?</p>
+
+        <p>That kind of question turned out to be the thing that made statistics make sense to me. I stopped telling myself I was simply bad at maths and started treating formulas the way I'd been trained to treat normative arguments in political theory. I'd imagine someone trying to convince me that a formula was true, and I'd be the skeptic, asking a thousand questions before accepting anything. Why this step? What justifies that move? What breaks if you change this?</p>
+
+        <p>It was painful at first. Slow. I'd spend hours on things other people seemed to accept in minutes. But over time I learned to sit with confusion until I found answers that actually convinced me. And once something convinced me, I didn't forget it.</p>
+
+        <p>Now most of my research is quantitative. I study judicial behavior in climate litigation, child abuse reporting patterns, spatial distributions in crime data. I build databases, write R packages, run simulations. I went from avoiding maths to organising my work around it.</p>
+
+        <p>These materials come from that. They're not written by an expert. They're written by someone who remembers not understanding, who had to find their own way in, and who thinks "just memorize it" is never an acceptable answer to "I don't get it."</p>
+      </div>
+    </section>
+
+    <!-- Section 3: A Few More Things -->
+    <section>
+      <h2 class="section-title">A Few More Things</h2>
+      <div class="section-content">
+        <p>Five things I love, in order: my dog, sea otters (and river otters), statistics, epistemology, and nice visuals. I'll try to put a bit of all of this into my series, though probably with a heavier focus on the last three.</p>
+
+        <p>The visuals on this page are river otters because, believe it or not, making a 3D sea otter from scratch is well beyond my coding abilities. My attempts looked more like monsters than marine mammals, so I turned to a proper model instead. Credit goes to <a href="https://www.printables.com/model/711777-low-poly-otters" target="_blank" rel="noopener noreferrer">miniShev on Printables</a> for the lovely low-poly otter.</p>
+
+        <p>If you want to get in touch, you can reach me at <a href="mailto:sacha.bechara.23@ucl.ac.uk">sacha.bechara.23@ucl.ac.uk</a>. Priority goes to questions about my dog and otters.</p>
+
+        <p>You can find some of my other work here:</p>
+
+        <a href="https://sachabechara.github.io/escll-website/index.html" target="_blank" rel="noopener noreferrer" class="link-card">
+          <span class="link-card-text">ESCLL — Empirical Study of Climate Litigation Lab</span>
+          <svg class="link-card-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+      <a href="../series/index.html" class="footer-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to series
+      </a>
+    </nav>
+  </main>
+  </div>
+
+  <!-- Load the STL-extracted otter mesh data -->
+  <script src="otter_data.js"></script>
+
+  <script>
+    // =====================
+    // Low-Poly Sea Otter Background Animation
+    // Uses mesh data from STL file (otter_data.js)
+    // =====================
+
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let animationId;
+    let time = 0;
+
+    function setupCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    }
+
+    // Otter mesh is loaded from otter_data.js (otterVertices, otterEdges)
+
+    // 3D rotation functions
+    function rotateY(x, y, z, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: x * cos - z * sin,
+        y: y,
+        z: x * sin + z * cos
+      };
+    }
+
+    function rotateX(x, y, z, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: x,
+        y: y * cos - z * sin,
+        z: y * sin + z * cos
+      };
+    }
+
+    function rotateZ(x, y, z, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: x * cos - y * sin,
+        y: x * sin + y * cos,
+        z: z
+      };
+    }
+
+    // Project 3D to 2D
+    function project(x, y, z, cx, cy, scale) {
+      const perspective = 400 / (400 + z * 50);
+      return {
+        x: cx + x * scale * perspective,
+        y: cy - y * scale * perspective
+      };
+    }
+
+    // Draw a single otter
+    function drawOtter(cx, cy, scale, rotYAngle, bobOffset, flip) {
+      // Teal wireframe color
+      ctx.strokeStyle = 'rgba(78, 204, 163, 0.55)';
+      ctx.lineWidth = 1;
+
+      // Apply flip for mirroring
+      const flipMult = flip ? -1 : 1;
+
+      // Project all vertices
+      const projected = otterVertices.map(v => {
+        let [x, y, z] = v;
+
+        // The STL model needs to be rotated to face the right way
+        // Rotate 90 degrees around X to lay it flat (floating on back)
+        let r1 = rotateX(x, y, z, -Math.PI / 2);
+
+        // Apply mirroring
+        r1.x *= flipMult;
+
+        // Add bobbing motion
+        r1.y += bobOffset;
+
+        // Slow rotation around Y axis (gentle spin while floating)
+        const r2 = rotateY(r1.x, r1.y, r1.z, rotYAngle);
+
+        // Slight tilt for perspective
+        const r3 = rotateX(r2.x, r2.y, r2.z, 0.15);
+
+        return project(r3.x, r3.y, r3.z, cx, cy, scale);
+      });
+
+      // Draw edges
+      ctx.beginPath();
+      for (const [i, j] of otterEdges) {
+        const p1 = projected[i];
+        const p2 = projected[j];
+        if (p1 && p2) {
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+        }
+      }
+      ctx.stroke();
+    }
+
+    // Draw water ripples
+    function drawWaterRipples(cx, cy, size, time) {
+      ctx.strokeStyle = 'rgba(78, 204, 163, 0.2)';
+      ctx.lineWidth = 1;
+
+      // Several concentric ellipses
+      for (let i = 0; i < 4; i++) {
+        const rippleTime = time * 0.0005 + i * 0.5;
+        const rippleSize = size * (0.8 + i * 0.3) + Math.sin(rippleTime) * 5;
+        const rippleY = cy + size * 0.15 + i * 8;
+
+        ctx.beginPath();
+        ctx.ellipse(cx, rippleY, rippleSize, rippleSize * 0.15, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // Draw subtle bubbles
+    function drawBubbles(cx, cy, size, time, seed) {
+      ctx.fillStyle = 'rgba(78, 204, 163, 0.35)';
+
+      for (let i = 0; i < 6; i++) {
+        const bubbleTime = time * 0.001 + seed + i * 1.5;
+        const x = cx + Math.sin(bubbleTime * 0.7 + i) * size * 0.4;
+        const yOffset = ((bubbleTime * 0.3 + i * 0.4) % 2) - 1;
+        const y = cy + yOffset * size * 0.5;
+        const radius = 1.5 + Math.sin(bubbleTime + i) * 0.5;
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Otter positions configuration - using STL mesh
+    const otterConfigs = [
+      { side: 'left', yPos: 0.22, scale: 0.9, rotSpeed: 0.0002, bobSpeed: 0.0006, bobAmp: 0.02 },
+      { side: 'left', yPos: 0.55, scale: 0.75, rotSpeed: 0.00018, bobSpeed: 0.0008, bobAmp: 0.018 },
+      { side: 'left', yPos: 0.85, scale: 0.65, rotSpeed: 0.00022, bobSpeed: 0.0007, bobAmp: 0.015 },
+      { side: 'right', yPos: 0.18, scale: 0.8, rotSpeed: 0.00019, bobSpeed: 0.0005, bobAmp: 0.02 },
+      { side: 'right', yPos: 0.5, scale: 0.85, rotSpeed: 0.00021, bobSpeed: 0.0009, bobAmp: 0.016 },
+      { side: 'right', yPos: 0.82, scale: 0.7, rotSpeed: 0.0002, bobSpeed: 0.00065, bobAmp: 0.018 }
+    ];
+
+    function animate(timestamp) {
+      time = timestamp || 0;
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw each otter
+      otterConfigs.forEach((config, index) => {
+        const xPos = config.side === 'left' ? width * 0.12 : width * 0.88;
+        const yPos = height * config.yPos;
+        // Scale for STL mesh (adjust base size as needed)
+        const scale = Math.min(width * 0.08, 100) * config.scale;
+
+        // Rotation angle
+        const rotY = time * config.rotSpeed + index * 0.8;
+
+        // Bobbing motion
+        const bob = Math.sin(time * config.bobSpeed + index) * config.bobAmp;
+
+        // Draw water effect first
+        drawWaterRipples(xPos, yPos, scale, time + index * 1000);
+
+        // Draw bubbles
+        drawBubbles(xPos, yPos, scale, time, index * 2);
+
+        // Draw the otter (flip right-side otters)
+        drawOtter(xPos, yPos, scale, rotY, bob, config.side === 'right');
+      });
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function init() {
+      setupCanvas();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', setupCanvas);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      } else if (!animationId) {
+        animationId = requestAnimationFrame(animate);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

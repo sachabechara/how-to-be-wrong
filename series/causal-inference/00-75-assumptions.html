@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="What Has to Be True - The assumptions underlying causal inference and when they break. Part of the Causal Inference series.">
+  <title>What Has to Be True | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scroll Progress Indicator */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* Site Navigation */
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-brand:hover {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      position: fixed;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      z-index: 50;
+    }
+
+    .toc-toggle {
+      display: none;
+    }
+
+    .toc {
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-width: 200px;
+    }
+
+    .toc-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc-list a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: block;
+      padding-left: 0.75rem;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    /* Main Content */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    /* Episode Header */
+    .episode-header {
+      margin-bottom: 4rem;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s backwards;
+    }
+
+    .episode-series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-series-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Article Content */
+    article {
+      color: var(--text-secondary);
+      animation: fadeIn 0.6s var(--ease-in-out) 0.2s backwards;
+    }
+
+    article p {
+      margin-bottom: 1.5rem;
+    }
+
+    article section {
+      margin-bottom: 3rem;
+    }
+
+    article h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    article h3 {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    article em {
+      font-style: italic;
+    }
+
+    /* Visualization Container */
+    .viz-container {
+      margin: 3rem -2rem;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    /* Code/Labels */
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* Visualization Caption */
+    .viz-caption {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .viz-caption-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Interference Network Visualization */
+    .interference-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+
+    .interference-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .interference-viz .connection-line {
+      stroke: rgba(240, 240, 240, 0.1);
+      stroke-width: 1;
+      transition: stroke 0.5s var(--ease-in-out);
+    }
+
+    .interference-viz .person-node {
+      transition: all 0.5s var(--ease-in-out);
+    }
+
+    .interference-viz .person-circle {
+      fill: rgba(240, 240, 240, 0.3);
+      transition: fill 0.5s var(--ease-in-out);
+    }
+
+    .interference-viz .person-circle.active {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 6px rgba(78, 204, 163, 0.5));
+    }
+
+    .interference-viz .outcome-label {
+      font-size: 16px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out);
+    }
+
+    .interference-viz .outcome-label.visible {
+      opacity: 1;
+    }
+
+    .interference-viz .phase-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out);
+    }
+
+    .interference-viz .phase-label.visible {
+      opacity: 1;
+    }
+
+    /* Compliance Visualization */
+    .compliance-viz {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      position: relative;
+    }
+
+    .compliance-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .compliance-viz .group-box {
+      fill: none;
+      stroke: rgba(240, 240, 240, 0.2);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+
+    .compliance-viz .group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .compliance-viz .person-dot {
+      transition: all 1.2s var(--ease-in-out);
+    }
+
+    .compliance-viz .person-dot.treatment {
+      fill: var(--accent);
+    }
+
+    .compliance-viz .person-dot.control {
+      fill: var(--error);
+    }
+
+    .compliance-viz .person-dot.drifting {
+      transition: all 1.5s var(--ease-in-out);
+    }
+
+    .compliance-viz .avg-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out);
+    }
+
+    .compliance-viz .avg-label.visible {
+      opacity: 1;
+    }
+
+    /* Attrition Visualization */
+    .attrition-viz {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      position: relative;
+    }
+
+    .attrition-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .attrition-viz .group-box {
+      fill: none;
+      stroke: rgba(240, 240, 240, 0.2);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+
+    .attrition-viz .group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .attrition-viz .person-dot {
+      transition: opacity 0.8s var(--ease-in-out), transform 0.8s var(--ease-in-out);
+    }
+
+    .attrition-viz .person-dot.treatment {
+      fill: var(--accent);
+    }
+
+    .attrition-viz .person-dot.control {
+      fill: var(--error);
+    }
+
+    .attrition-viz .person-dot.disappeared {
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .attrition-viz .count-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      fill: var(--text-secondary);
+      text-anchor: middle;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    /* Visualization Controls */
+    .viz-controls {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .viz-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-in-out);
+      margin: 0 0.5rem;
+    }
+
+    .viz-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .viz-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .viz-btn:disabled:hover {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    /* Episode Navigation */
+    .episode-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.3s backwards;
+    }
+
+    .episode-nav-link {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      max-width: 45%;
+      padding: 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .episode-nav-link--prev {
+      align-items: flex-start;
+    }
+
+    .episode-nav-link--next {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .episode-nav-direction {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-nav-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover .episode-nav-title {
+      color: var(--text-primary);
+    }
+
+    .episode-nav-link--disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .toc-container {
+        position: fixed;
+        top: auto;
+        bottom: 2rem;
+        right: 2rem;
+        transform: none;
+      }
+
+      .toc-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: var(--bg);
+        border: 1px solid rgba(240, 240, 240, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .toc-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-secondary);
+        transition: stroke 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover svg {
+        stroke: var(--accent);
+      }
+
+      .toc {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-container.open .toc {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+
+      .site-nav {
+        padding: 1rem;
+      }
+
+      .nav-brand {
+        font-size: 0.9rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      main {
+        padding: 6rem 1.5rem 3rem;
+      }
+
+      .episode-title {
+        font-size: 2.2rem;
+      }
+
+      .episode-series-name {
+        font-size: 1rem;
+      }
+
+      .episode-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .viz-container {
+        margin: 2rem -1.5rem;
+        padding: 1.5rem;
+      }
+
+      .episode-nav {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .episode-nav-link {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .episode-nav-link--next {
+        margin-left: 0;
+      }
+
+      .toc-container {
+        bottom: 1rem;
+        right: 1rem;
+      }
+
+      footer {
+        padding: 2rem 1.5rem 3rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+
+      main {
+        padding: 5rem 1rem 2rem;
+      }
+
+      .episode-title {
+        font-size: 1.9rem;
+      }
+
+      .viz-container {
+        margin: 1.5rem -1rem;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Site Navigation -->
+  <nav class="site-nav">
+    <a href="../../index.html" class="nav-brand">Statistics: How to Be Wrong (Less Often)</a>
+    <ul class="nav-links">
+      <li><a href="../index.html">series</a></li>
+      <li><a href="../../resources/index.html">resources</a></li>
+      <li><a href="../../about/index.html">about</a></li>
+    </ul>
+  </nav>
+
+  <!-- Table of Contents -->
+  <aside class="toc-container" id="tocContainer">
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="15" y2="12"></line>
+        <line x1="3" y1="18" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <nav class="toc">
+      <p class="toc-title">In this episode</p>
+      <ul class="toc-list">
+        <li><a href="#the-fine-print">The Fine Print</a></li>
+        <li><a href="#no-interference">No Interference</a></li>
+        <li><a href="#compliance">Compliance</a></li>
+        <li><a href="#attrition">Attrition</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <header class="episode-header">
+      <p class="episode-series-label">Series</p>
+      <p class="episode-series-name">Causal Inference</p>
+      <p class="episode-number">Episode 02</p>
+      <h1 class="episode-title">What Has to Be True</h1>
+      <p class="episode-subtitle">The assumptions underlying causal inference</p>
+    </header>
+
+    <article>
+      <section id="the-fine-print">
+        <h2>The Fine Print</h2>
+
+        <p>We said experiments solve the confounding problem. Random assignment creates balanced groups. The difference in outcomes estimates the causal effect.</p>
+
+        <p>This is true. But it rests on assumptions — things that have to hold for the logic to work. When they break, our conclusions break with them.</p>
+
+        <p>Three assumptions matter most.</p>
+      </section>
+
+      <section id="no-interference">
+        <h2>Assumption One — No Interference</h2>
+
+        <p>Your outcome depends only on your own treatment, not on what anyone else received.</p>
+
+        <p>In the dating context: whether playing hard to get works for you doesn't depend on whether everyone else is also playing hard to get.</p>
+
+        <p>But does that hold? If everyone starts playing hard to get, the whole dynamic changes. What was intriguing becomes exhausting. The strategy might work when rare and fail when common.</p>
+
+        <!-- Interference Network Visualization -->
+        <div class="viz-container">
+          <div class="interference-viz" id="interferenceViz">
+            <svg id="interferenceSvg" aria-label="Network showing interference between people's strategies"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="onePersonBtn">One person plays</button>
+            <button class="viz-btn" id="everyoneBtn">Everyone plays</button>
+            <button class="viz-btn" id="resetInterferenceBtn">Reset</button>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">When everyone plays the game, the game changes.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="compliance">
+        <h2>Assumption Two — You Actually Get the Treatment</h2>
+
+        <p>Assignment isn't the same as treatment. We can randomly assign people to "play hard to get" or "be direct," but we can't force them to actually do it.</p>
+
+        <p>Some people assigned to play hard to get will chicken out. Some assigned to be direct will get nervous and hedge. People drift from their assigned groups toward what feels natural.</p>
+
+        <p>This is called <em>noncompliance</em>. And it's not random — the drifters are different from the stayers. The confident drift one way. The anxious drift another. Suddenly our perfectly balanced groups aren't balanced anymore.</p>
+
+        <!-- Compliance Visualization -->
+        <div class="viz-container">
+          <div class="compliance-viz" id="complianceViz">
+            <svg id="complianceSvg" aria-label="Visualization showing people drifting between assigned treatment groups"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="showDriftBtn">Watch people drift</button>
+            <button class="viz-btn" id="resetComplianceBtn">Reset</button>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="complianceCaption">Random assignment creates balanced groups.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="attrition">
+        <h2>Assumption Three — No One Is Hiding</h2>
+
+        <p>Experiments take time. And during that time, people disappear.</p>
+
+        <p>They move. They lose interest. They stop responding to surveys. In dating experiments, they might get into relationships — and suddenly they're not available for follow-up.</p>
+
+        <p>This is <em>attrition</em>. And like noncompliance, it's rarely random. The people who disappear are systematically different from those who stay. Maybe the treatment worked so well they stopped participating. Maybe it worked so badly they gave up. Either way, the people we can measure are no longer representative of the people we randomized.</p>
+
+        <!-- Attrition Visualization -->
+        <div class="viz-container">
+          <div class="attrition-viz" id="attritionViz">
+            <svg id="attritionSvg" aria-label="Visualization showing people disappearing from study groups"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="startAttritionBtn">Time passes...</button>
+            <button class="viz-btn" id="resetAttritionBtn">Reset</button>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="attritionCaption">Two balanced groups, ready for study.</span>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <!-- Episode Navigation -->
+    <nav class="episode-nav">
+      <a href="00-5-potential-outcomes.html" class="episode-nav-link episode-nav-link--prev">
+        <span class="episode-nav-direction">Previous</span>
+        <span class="episode-nav-title">The Two Worlds Problem</span>
+      </a>
+      <a href="01-sampling-distributions.html" class="episode-nav-link episode-nav-link--next">
+        <span class="episode-nav-direction">Next</span>
+        <span class="episode-nav-title">Running It Again</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>
+    <p class="footer-text">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // Scroll Progress Indicator
+    const scrollProgress = document.getElementById('scrollProgress');
+
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      scrollProgress.style.width = scrollPercent + '%';
+    }
+
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    updateScrollProgress();
+
+    // Table of Contents Toggle (for mobile/tablet)
+    const tocContainer = document.getElementById('tocContainer');
+    const tocToggle = document.getElementById('tocToggle');
+
+    tocToggle.addEventListener('click', () => {
+      tocContainer.classList.toggle('open');
+    });
+
+    // Close TOC when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!tocContainer.contains(e.target)) {
+        tocContainer.classList.remove('open');
+      }
+    });
+
+    // Active section highlighting in TOC
+    const sections = document.querySelectorAll('article section[id]');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 150;
+
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          tocLinks.forEach((link) => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + sectionId) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', highlightActiveSection, { passive: true });
+    highlightActiveSection();
+
+    // Smooth scroll for TOC links
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+          tocContainer.classList.remove('open');
+        }
+      });
+    });
+
+    // Seeded random number generator
+    function seededRandom(seed) {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // =====================
+    // Interference Network Visualization
+    // =====================
+
+    let interferenceState = 'initial'; // 'initial', 'one', 'everyone'
+
+    function createInterferenceViz() {
+      const svg = document.getElementById('interferenceSvg');
+      const container = document.getElementById('interferenceViz');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Generate 8 people in a network layout
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) * 0.32;
+
+      const people = [];
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
+        people.push({
+          id: i,
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY + Math.sin(angle) * radius,
+          active: false,
+          outcome: null
+        });
+      }
+
+      // Define connections (not all connected, but a network)
+      const connections = [
+        [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
+        [0, 3], [1, 4], [2, 5], [3, 6], [4, 7], [0, 5]
+      ];
+
+      // Build SVG content
+      let svgContent = '';
+
+      // Draw connections
+      connections.forEach(([a, b], i) => {
+        svgContent += `
+          <line class="connection-line" id="connection${i}"
+            x1="${people[a].x}" y1="${people[a].y}"
+            x2="${people[b].x}" y2="${people[b].y}" />
+        `;
+      });
+
+      // Draw people nodes
+      people.forEach((person, i) => {
+        svgContent += `
+          <g class="person-node" id="person${i}">
+            <circle class="person-circle" id="circle${i}"
+              cx="${person.x}" cy="${person.y}" r="18" />
+            <text class="outcome-label" id="outcome${i}"
+              x="${person.x}" y="${person.y - 30}"></text>
+          </g>
+        `;
+      });
+
+      // Phase labels
+      svgContent += `
+        <text class="phase-label" id="phaseLabel" x="${centerX}" y="${height - 20}"></text>
+      `;
+
+      svg.innerHTML = svgContent;
+
+      // Setup button handlers
+      const onePersonBtn = document.getElementById('onePersonBtn');
+      const everyoneBtn = document.getElementById('everyoneBtn');
+      const resetBtn = document.getElementById('resetInterferenceBtn');
+
+      if (onePersonBtn) {
+        onePersonBtn.addEventListener('click', () => {
+          if (interferenceState !== 'initial') return;
+          interferenceState = 'one';
+          animateOnePerson();
+          onePersonBtn.disabled = true;
+        });
+      }
+
+      if (everyoneBtn) {
+        everyoneBtn.addEventListener('click', () => {
+          if (interferenceState !== 'one') return;
+          interferenceState = 'everyone';
+          animateEveryone();
+          everyoneBtn.disabled = true;
+        });
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          resetInterference();
+        });
+      }
+    }
+
+    function animateOnePerson() {
+      // Activate just one person (person 0)
+      const circle0 = document.getElementById('circle0');
+      const outcome0 = document.getElementById('outcome0');
+      const phaseLabel = document.getElementById('phaseLabel');
+
+      if (circle0) {
+        circle0.classList.add('active');
+      }
+
+      // Show positive outcome after delay
+      setTimeout(() => {
+        if (outcome0) {
+          outcome0.textContent = '👍';
+          outcome0.classList.add('visible');
+        }
+        if (phaseLabel) {
+          phaseLabel.textContent = 'One person plays hard to get → Success';
+          phaseLabel.classList.add('visible');
+        }
+      }, 600);
+    }
+
+    function animateEveryone() {
+      const phaseLabel = document.getElementById('phaseLabel');
+
+      // Hide previous phase label
+      if (phaseLabel) {
+        phaseLabel.classList.remove('visible');
+      }
+
+      // First, hide the previous outcome
+      const outcome0 = document.getElementById('outcome0');
+      if (outcome0) {
+        outcome0.classList.remove('visible');
+      }
+
+      // Activate all circles with stagger
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const circle = document.getElementById(`circle${i}`);
+          if (circle) {
+            circle.classList.add('active');
+          }
+        }, i * 100);
+      }
+
+      // Show outcomes after all activate - mostly negative
+      setTimeout(() => {
+        const outcomes = ['👎', '👎', '👎', '👎', '👎', '👎', '👍', '👎'];
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            const outcome = document.getElementById(`outcome${i}`);
+            if (outcome) {
+              outcome.textContent = outcomes[i];
+              outcome.classList.add('visible');
+            }
+          }, i * 80);
+        }
+      }, 800 + 100);
+
+      // Update phase label
+      setTimeout(() => {
+        if (phaseLabel) {
+          phaseLabel.textContent = 'Everyone plays hard to get → The strategy stops working';
+          phaseLabel.classList.add('visible');
+        }
+      }, 800 + 100 + 8 * 80 + 300);
+    }
+
+    function resetInterference() {
+      interferenceState = 'initial';
+
+      // Reset all circles
+      for (let i = 0; i < 8; i++) {
+        const circle = document.getElementById(`circle${i}`);
+        const outcome = document.getElementById(`outcome${i}`);
+        if (circle) circle.classList.remove('active');
+        if (outcome) {
+          outcome.classList.remove('visible');
+          outcome.textContent = '';
+        }
+      }
+
+      // Reset phase label
+      const phaseLabel = document.getElementById('phaseLabel');
+      if (phaseLabel) {
+        phaseLabel.classList.remove('visible');
+        phaseLabel.textContent = '';
+      }
+
+      // Re-enable buttons
+      const onePersonBtn = document.getElementById('onePersonBtn');
+      const everyoneBtn = document.getElementById('everyoneBtn');
+      if (onePersonBtn) onePersonBtn.disabled = false;
+      if (everyoneBtn) everyoneBtn.disabled = false;
+    }
+
+    // =====================
+    // Compliance Visualization
+    // =====================
+
+    let complianceState = 'initial'; // 'initial', 'drifted'
+    let compliancePeople = [];
+
+    function createComplianceViz() {
+      const svg = document.getElementById('complianceSvg');
+      const container = document.getElementById('complianceViz');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const boxWidth = width * 0.35;
+      const boxHeight = height * 0.65;
+      const boxY = height * 0.18;
+      const leftBoxX = width * 0.1;
+      const rightBoxX = width * 0.55;
+
+      // Generate 10 people in each group (treatment on left, control on right)
+      compliancePeople = [];
+      const dotRadius = 8;
+
+      // Treatment group (left) - people assigned to "play hard to get"
+      for (let i = 0; i < 10; i++) {
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        compliancePeople.push({
+          id: i,
+          group: 'treatment',
+          originalX: leftBoxX + 30 + col * (boxWidth - 60) / 4,
+          originalY: boxY + 35 + row * 45,
+          x: leftBoxX + 30 + col * (boxWidth - 60) / 4,
+          y: boxY + 35 + row * 45,
+          confidence: seededRandom(i * 3 + 100) * 0.7 + 0.3, // Higher confidence on average
+          willDrift: i === 1 || i === 6 // These 2 will drift to control
+        });
+      }
+
+      // Control group (right) - people assigned to "be direct"
+      for (let i = 0; i < 10; i++) {
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        compliancePeople.push({
+          id: i + 10,
+          group: 'control',
+          originalX: rightBoxX + 30 + col * (boxWidth - 60) / 4,
+          originalY: boxY + 35 + row * 45,
+          x: rightBoxX + 30 + col * (boxWidth - 60) / 4,
+          y: boxY + 35 + row * 45,
+          confidence: seededRandom(i * 3 + 200) * 0.7 + 0.3,
+          willDrift: i === 2 || i === 4 || i === 8 // These 3 will drift to treatment
+        });
+      }
+
+      let svgContent = '';
+
+      // Draw group boxes
+      svgContent += `
+        <rect class="group-box" x="${leftBoxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="4" />
+        <rect class="group-box" x="${rightBoxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="4" />
+      `;
+
+      // Draw group labels
+      svgContent += `
+        <text class="group-label" x="${leftBoxX + boxWidth / 2}" y="${boxY - 10}">Assigned: Play Hard to Get</text>
+        <text class="group-label" x="${rightBoxX + boxWidth / 2}" y="${boxY - 10}">Assigned: Be Direct</text>
+      `;
+
+      // Draw people dots
+      compliancePeople.forEach((person) => {
+        const groupClass = person.group === 'treatment' ? 'treatment' : 'control';
+        svgContent += `
+          <circle class="person-dot ${groupClass}" id="compPerson${person.id}"
+            cx="${person.x}" cy="${person.y}" r="${dotRadius}" />
+        `;
+      });
+
+      // Average confidence labels (hidden initially)
+      svgContent += `
+        <text class="avg-label" id="avgLabelLeft" x="${leftBoxX + boxWidth / 2}" y="${boxY + boxHeight + 25}"></text>
+        <text class="avg-label" id="avgLabelRight" x="${rightBoxX + boxWidth / 2}" y="${boxY + boxHeight + 25}"></text>
+      `;
+
+      svg.innerHTML = svgContent;
+
+      // Setup button handlers
+      const showDriftBtn = document.getElementById('showDriftBtn');
+      const resetComplianceBtn = document.getElementById('resetComplianceBtn');
+
+      if (showDriftBtn) {
+        showDriftBtn.addEventListener('click', () => {
+          if (complianceState !== 'initial') return;
+          complianceState = 'drifted';
+          animateDrift();
+          showDriftBtn.disabled = true;
+        });
+      }
+
+      if (resetComplianceBtn) {
+        resetComplianceBtn.addEventListener('click', resetCompliance);
+      }
+    }
+
+    function animateDrift() {
+      const caption = document.getElementById('complianceCaption');
+
+      // Calculate target positions for drifters
+      // Those from treatment (left) who drift to control (right)
+      const treatmentDrifters = compliancePeople.filter(p => p.group === 'treatment' && p.willDrift);
+      const controlDrifters = compliancePeople.filter(p => p.group === 'control' && p.willDrift);
+
+      // Get box dimensions again
+      const container = document.getElementById('complianceViz');
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const boxWidth = width * 0.35;
+      const boxY = height * 0.18;
+      const leftBoxX = width * 0.1;
+      const rightBoxX = width * 0.55;
+
+      // Animate treatment drifters to control side
+      treatmentDrifters.forEach((person, i) => {
+        setTimeout(() => {
+          const dot = document.getElementById(`compPerson${person.id}`);
+          if (dot) {
+            dot.classList.add('drifting');
+            // Move to right box
+            const newX = rightBoxX + 30 + (i * 2 + 1) * (boxWidth - 60) / 4;
+            const newY = boxY + 35 + 90 + i * 20;
+            dot.setAttribute('cx', newX);
+            dot.setAttribute('cy', newY);
+          }
+        }, i * 300);
+      });
+
+      // Animate control drifters to treatment side
+      controlDrifters.forEach((person, i) => {
+        setTimeout(() => {
+          const dot = document.getElementById(`compPerson${person.id}`);
+          if (dot) {
+            dot.classList.add('drifting');
+            // Move to left box
+            const newX = leftBoxX + 30 + (i * 2) * (boxWidth - 60) / 4;
+            const newY = boxY + 35 + 90 + i * 15;
+            dot.setAttribute('cx', newX);
+            dot.setAttribute('cy', newY);
+          }
+        }, 300 + i * 300);
+      });
+
+      // Update caption after drift
+      const totalDriftTime = 300 + Math.max(treatmentDrifters.length, controlDrifters.length) * 300 + 800;
+      setTimeout(() => {
+        if (caption) {
+          caption.textContent = 'The anxious drift to "be direct." The confident drift to "play hard to get."';
+        }
+
+        // Show average labels
+        const avgLabelLeft = document.getElementById('avgLabelLeft');
+        const avgLabelRight = document.getElementById('avgLabelRight');
+        if (avgLabelLeft) {
+          avgLabelLeft.textContent = 'Now higher confidence on average';
+          avgLabelLeft.classList.add('visible');
+        }
+        if (avgLabelRight) {
+          avgLabelRight.textContent = 'Now lower confidence on average';
+          avgLabelRight.classList.add('visible');
+        }
+      }, totalDriftTime);
+    }
+
+    function resetCompliance() {
+      complianceState = 'initial';
+
+      // Reset all dots to original positions
+      compliancePeople.forEach((person) => {
+        const dot = document.getElementById(`compPerson${person.id}`);
+        if (dot) {
+          dot.classList.remove('drifting');
+          dot.setAttribute('cx', person.originalX);
+          dot.setAttribute('cy', person.originalY);
+        }
+      });
+
+      // Reset caption
+      const caption = document.getElementById('complianceCaption');
+      if (caption) {
+        caption.textContent = 'Random assignment creates balanced groups.';
+      }
+
+      // Hide average labels
+      const avgLabelLeft = document.getElementById('avgLabelLeft');
+      const avgLabelRight = document.getElementById('avgLabelRight');
+      if (avgLabelLeft) avgLabelLeft.classList.remove('visible');
+      if (avgLabelRight) avgLabelRight.classList.remove('visible');
+
+      // Re-enable button
+      const showDriftBtn = document.getElementById('showDriftBtn');
+      if (showDriftBtn) showDriftBtn.disabled = false;
+    }
+
+    // =====================
+    // Attrition Visualization
+    // =====================
+
+    let attritionState = 'initial'; // 'initial', 'disappeared'
+    let attritionPeople = [];
+
+    function createAttritionViz() {
+      const svg = document.getElementById('attritionSvg');
+      const container = document.getElementById('attritionViz');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const boxWidth = width * 0.35;
+      const boxHeight = height * 0.6;
+      const boxY = height * 0.18;
+      const leftBoxX = width * 0.1;
+      const rightBoxX = width * 0.55;
+
+      // Generate 15 people in each group
+      attritionPeople = [];
+      const dotRadius = 7;
+
+      // Treatment group (left)
+      for (let i = 0; i < 15; i++) {
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        // In treatment: those who succeed disappear (found a relationship)
+        // Make it so higher-confidence people more likely to disappear (treatment worked)
+        const confidence = seededRandom(i * 5 + 300) * 0.6 + 0.4;
+        attritionPeople.push({
+          id: i,
+          group: 'treatment',
+          x: leftBoxX + 30 + col * (boxWidth - 60) / 4,
+          y: boxY + 30 + row * 38,
+          confidence: confidence,
+          willDisappear: i === 0 || i === 2 || i === 4 || i === 6 || i === 9 || i === 11 || i === 13 // 7 disappear (successes)
+        });
+      }
+
+      // Control group (right)
+      for (let i = 0; i < 15; i++) {
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        // In control: those who fail disappear (gave up on dating)
+        const confidence = seededRandom(i * 5 + 400) * 0.6 + 0.4;
+        attritionPeople.push({
+          id: i + 15,
+          group: 'control',
+          x: rightBoxX + 30 + col * (boxWidth - 60) / 4,
+          y: boxY + 30 + row * 38,
+          confidence: confidence,
+          willDisappear: i === 3 || i === 7 || i === 10 || i === 14 // 4 disappear (failures)
+        });
+      }
+
+      let svgContent = '';
+
+      // Draw group boxes
+      svgContent += `
+        <rect class="group-box" x="${leftBoxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="4" />
+        <rect class="group-box" x="${rightBoxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="4" />
+      `;
+
+      // Draw group labels
+      svgContent += `
+        <text class="group-label" x="${leftBoxX + boxWidth / 2}" y="${boxY - 10}">Treatment Group</text>
+        <text class="group-label" x="${rightBoxX + boxWidth / 2}" y="${boxY - 10}">Control Group</text>
+      `;
+
+      // Draw people dots
+      attritionPeople.forEach((person) => {
+        const groupClass = person.group === 'treatment' ? 'treatment' : 'control';
+        svgContent += `
+          <circle class="person-dot ${groupClass}" id="attrPerson${person.id}"
+            cx="${person.x}" cy="${person.y}" r="${dotRadius}" />
+        `;
+      });
+
+      // Count labels
+      svgContent += `
+        <text class="count-label" id="countLabelLeft" x="${leftBoxX + boxWidth / 2}" y="${boxY + boxHeight + 25}">n = 15</text>
+        <text class="count-label" id="countLabelRight" x="${rightBoxX + boxWidth / 2}" y="${boxY + boxHeight + 25}">n = 15</text>
+      `;
+
+      svg.innerHTML = svgContent;
+
+      // Setup button handlers
+      const startAttritionBtn = document.getElementById('startAttritionBtn');
+      const resetAttritionBtn = document.getElementById('resetAttritionBtn');
+
+      if (startAttritionBtn) {
+        startAttritionBtn.addEventListener('click', () => {
+          if (attritionState !== 'initial') return;
+          attritionState = 'disappeared';
+          animateAttrition();
+          startAttritionBtn.disabled = true;
+        });
+      }
+
+      if (resetAttritionBtn) {
+        resetAttritionBtn.addEventListener('click', resetAttrition);
+      }
+    }
+
+    function animateAttrition() {
+      const caption = document.getElementById('attritionCaption');
+      const countLabelLeft = document.getElementById('countLabelLeft');
+      const countLabelRight = document.getElementById('countLabelRight');
+
+      // Get all people who will disappear, interleaved from both groups
+      const treatmentDisappear = attritionPeople.filter(p => p.group === 'treatment' && p.willDisappear);
+      const controlDisappear = attritionPeople.filter(p => p.group === 'control' && p.willDisappear);
+
+      let treatmentLeft = 15;
+      let controlLeft = 15;
+
+      // Animate disappearances with staggered timing
+      const allDisappear = [];
+      const maxLen = Math.max(treatmentDisappear.length, controlDisappear.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (i < treatmentDisappear.length) allDisappear.push({ person: treatmentDisappear[i], group: 'treatment' });
+        if (i < controlDisappear.length) allDisappear.push({ person: controlDisappear[i], group: 'control' });
+      }
+
+      allDisappear.forEach((item, i) => {
+        setTimeout(() => {
+          const dot = document.getElementById(`attrPerson${item.person.id}`);
+          if (dot) {
+            dot.classList.add('disappeared');
+          }
+
+          // Update counts
+          if (item.group === 'treatment') {
+            treatmentLeft--;
+            if (countLabelLeft) countLabelLeft.textContent = `n = ${treatmentLeft}`;
+          } else {
+            controlLeft--;
+            if (countLabelRight) countLabelRight.textContent = `n = ${controlLeft}`;
+          }
+        }, i * 350);
+      });
+
+      // Update caption after all disappear
+      const totalTime = allDisappear.length * 350 + 600;
+      setTimeout(() => {
+        if (caption) {
+          caption.textContent = 'Treatment successes leave. Control failures give up. Who remains to compare?';
+        }
+      }, totalTime);
+    }
+
+    function resetAttrition() {
+      attritionState = 'initial';
+
+      // Reset all dots
+      attritionPeople.forEach((person) => {
+        const dot = document.getElementById(`attrPerson${person.id}`);
+        if (dot) {
+          dot.classList.remove('disappeared');
+        }
+      });
+
+      // Reset counts
+      const countLabelLeft = document.getElementById('countLabelLeft');
+      const countLabelRight = document.getElementById('countLabelRight');
+      if (countLabelLeft) countLabelLeft.textContent = 'n = 15';
+      if (countLabelRight) countLabelRight.textContent = 'n = 15';
+
+      // Reset caption
+      const caption = document.getElementById('attritionCaption');
+      if (caption) {
+        caption.textContent = 'Two balanced groups, ready for study.';
+      }
+
+      // Re-enable button
+      const startAttritionBtn = document.getElementById('startAttritionBtn');
+      if (startAttritionBtn) startAttritionBtn.disabled = false;
+    }
+
+    // Initialize all visualizations
+    function initAllViz() {
+      createInterferenceViz();
+      createComplianceViz();
+      createAttritionViz();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAllViz);
+    } else {
+      initAllViz();
+    }
+
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        createInterferenceViz();
+        createComplianceViz();
+        createAttritionViz();
+      }, 200);
+    });
+  </script>
+</body>
+</html>

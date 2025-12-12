@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Measuring the Wiggle - Understanding standard error and what it tells you about estimation uncertainty. Part of the Causal Inference series.">
+  <title>Measuring the Wiggle | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-brand:hover { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .toc-container {
+      position: fixed;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      z-index: 50;
+    }
+
+    .toc-toggle { display: none; }
+
+    .toc {
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-width: 200px;
+    }
+
+    .toc-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .toc-list { list-style: none; }
+    .toc-list li { margin-bottom: 0.75rem; }
+
+    .toc-list a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: block;
+      padding-left: 0.75rem;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .episode-header {
+      margin-bottom: 4rem;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s backwards;
+    }
+
+    .episode-series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-series-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    article {
+      color: var(--text-secondary);
+      animation: fadeIn 0.6s var(--ease-in-out) 0.2s backwards;
+    }
+
+    article p { margin-bottom: 1.5rem; }
+    article section { margin-bottom: 3rem; }
+
+    article h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    article em { font-style: italic; }
+
+    .viz-container {
+      margin: 3rem -2rem;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    .viz-caption {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .viz-caption-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Slider Controls */
+    .slider-container {
+      margin-top: 1.5rem;
+      padding: 0 1rem;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .slider-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      min-width: 160px;
+      flex-shrink: 0;
+    }
+
+    .slider-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      min-width: 80px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 4px;
+      background: rgba(240, 240, 240, 0.2);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s var(--ease-in-out);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Dartboard Visualization */
+    .dartboard-viz {
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .dartboard-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .dartboard-viz .ring {
+      fill: none;
+      stroke: rgba(240, 240, 240, 0.1);
+      stroke-width: 1;
+    }
+
+    .dartboard-viz .se-circle {
+      fill: rgba(78, 204, 163, 0.1);
+      stroke: var(--accent);
+      stroke-width: 2;
+      stroke-dasharray: 6 4;
+      transition: all 0.5s var(--ease-in-out);
+    }
+
+    .dartboard-viz .dart {
+      fill: var(--warning);
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .dartboard-viz .bullseye {
+      fill: var(--accent);
+    }
+
+    .dartboard-viz .label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .dartboard-viz .se-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--accent);
+    }
+
+    /* Histogram with SE Visualization */
+    .histogram-se-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+    }
+
+    .histogram-se-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .histogram-se-viz .axis-line {
+      stroke: rgba(240, 240, 240, 0.3);
+      stroke-width: 1;
+    }
+
+    .histogram-se-viz .bar {
+      fill: var(--accent);
+      opacity: 0.6;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .histogram-se-viz .se-region {
+      fill: rgba(78, 204, 163, 0.15);
+      transition: all 0.4s var(--ease-in-out);
+    }
+
+    .histogram-se-viz .se-line {
+      stroke: var(--accent);
+      stroke-width: 2;
+      stroke-dasharray: 6 4;
+      transition: all 0.4s var(--ease-in-out);
+    }
+
+    .histogram-se-viz .true-effect-line {
+      stroke: var(--warning);
+      stroke-width: 2;
+    }
+
+    .histogram-se-viz .tick-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--text-secondary);
+      text-anchor: middle;
+    }
+
+    .histogram-se-viz .axis-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    /* Formula Animation */
+    .formula-viz {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .formula-viz svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .formula-viz .formula-box {
+      fill: rgba(255, 255, 255, 0.05);
+      stroke: rgba(240, 240, 240, 0.2);
+      stroke-width: 1;
+      rx: 4;
+    }
+
+    .formula-viz .formula-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 16px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .formula-viz .formula-symbol {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 24px;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .formula-viz .formula-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .formula-element {
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out), transform 0.5s var(--ease-in-out);
+    }
+
+    .formula-element.visible {
+      opacity: 1;
+    }
+
+    /* Study Planner */
+    .planner-viz {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .planner-section {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(240, 240, 240, 0.1);
+    }
+
+    .planner-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .planner-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .planner-result {
+      text-align: center;
+    }
+
+    .planner-se-value {
+      font-family: 'Fraunces', serif;
+      font-size: 2.5rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .planner-interpretation {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .mini-histogram {
+      width: 100%;
+      height: 80px;
+      margin-top: 1rem;
+    }
+
+    .mini-histogram svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mini-histogram .bar {
+      fill: var(--accent);
+      opacity: 0.5;
+    }
+
+    .mini-histogram .axis-line {
+      stroke: rgba(240, 240, 240, 0.2);
+      stroke-width: 1;
+    }
+
+    /* Diminishing Returns Curve */
+    .curve-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+    }
+
+    .curve-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .curve-viz .axis-line {
+      stroke: rgba(240, 240, 240, 0.3);
+      stroke-width: 1;
+    }
+
+    .curve-viz .curve-path {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2;
+    }
+
+    .curve-viz .curve-dot {
+      fill: var(--warning);
+      transition: all 0.2s var(--ease-in-out);
+    }
+
+    .curve-viz .marker-line {
+      stroke: rgba(240, 240, 240, 0.2);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+
+    .curve-viz .marker-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--text-primary);
+    }
+
+    .curve-viz .axis-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    /* Two Findings Comparison */
+    .comparison-viz {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .comparison-panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .comparison-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .comparison-numberline {
+      width: 100%;
+      height: 100px;
+    }
+
+    .comparison-numberline svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .comparison-numberline .axis-line {
+      stroke: rgba(240, 240, 240, 0.3);
+      stroke-width: 1;
+    }
+
+    .comparison-numberline .uncertainty-band {
+      fill: rgba(78, 204, 163, 0.2);
+      transition: all 0.8s var(--ease-in-out);
+    }
+
+    .comparison-numberline .estimate-dot {
+      fill: var(--accent);
+    }
+
+    .comparison-numberline .tick-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--text-secondary);
+      text-anchor: middle;
+    }
+
+    .comparison-caption {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+
+    .comparison-stats {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Viz Button */
+    .viz-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-in-out);
+      margin: 0 0.5rem;
+    }
+
+    .viz-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .viz-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .viz-controls {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    /* Episode Navigation */
+    .episode-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .episode-nav-link {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      max-width: 45%;
+      padding: 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .episode-nav-link--prev { align-items: flex-start; }
+    .episode-nav-link--next { align-items: flex-end; margin-left: auto; }
+
+    .episode-nav-direction {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-nav-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover .episode-nav-title {
+      color: var(--text-primary);
+    }
+
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .toc-container {
+        position: fixed;
+        top: auto;
+        bottom: 2rem;
+        right: 2rem;
+        transform: none;
+      }
+
+      .toc-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: var(--bg);
+        border: 1px solid rgba(240, 240, 240, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .toc-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-secondary);
+      }
+
+      .toc {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-container.open .toc {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html { font-size: 16px; }
+      .site-nav { padding: 1rem; }
+      .nav-links { display: none; }
+      main { padding: 6rem 1.5rem 3rem; }
+      .episode-title { font-size: 2.2rem; }
+      .viz-container { margin: 2rem -1.5rem; padding: 1.5rem; }
+      .comparison-viz { grid-template-columns: 1fr; }
+      .slider-row { flex-wrap: wrap; }
+      .slider-label { min-width: 100%; margin-bottom: 0.25rem; }
+      .episode-nav { flex-direction: column; gap: 1.5rem; }
+      .episode-nav-link { max-width: 100%; width: 100%; }
+      .episode-nav-link--next { margin-left: 0; }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 15px; }
+      main { padding: 5rem 1rem 2rem; }
+      .episode-title { font-size: 1.9rem; }
+      .viz-container { margin: 1.5rem -1rem; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <nav class="site-nav">
+    <a href="../../index.html" class="nav-brand">Statistics: How to Be Wrong (Less Often)</a>
+    <ul class="nav-links">
+      <li><a href="../index.html">series</a></li>
+      <li><a href="../../resources/index.html">resources</a></li>
+      <li><a href="../../about/index.html">about</a></li>
+    </ul>
+  </nav>
+
+  <aside class="toc-container" id="tocContainer">
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="15" y2="12"></line>
+        <line x1="3" y1="18" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <nav class="toc">
+      <p class="toc-title">In this episode</p>
+      <ul class="toc-list">
+        <li><a href="#vague-words">The Problem with Vague Words</a></li>
+        <li><a href="#what-se-tells">What Standard Error Tells You</a></li>
+        <li><a href="#histogram-se">Seeing It in the Histogram</a></li>
+        <li><a href="#where-from">Where Does This Number Come From?</a></li>
+        <li><a href="#playing-levers">Playing With the Levers</a></li>
+        <li><a href="#diminishing-returns">The Diminishing Returns</a></li>
+        <li><a href="#both-numbers">Why You Need Both Numbers</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="episode-header">
+      <p class="episode-series-label">Series</p>
+      <p class="episode-series-name">Causal Inference</p>
+      <p class="episode-number">Episode 05</p>
+      <h1 class="episode-title">Measuring the Wiggle</h1>
+      <p class="episode-subtitle">What standard error actually means</p>
+    </header>
+
+    <article>
+      <section id="vague-words">
+        <h2>The Problem with Vague Words</h2>
+
+        <p>We've been using words like "narrow" and "wide" to describe how estimates spread. But these words aren't precise enough.</p>
+
+        <p>Imagine you're deciding whether to fund a study on dating strategies. Researcher A says their estimates are "fairly tight." Researcher B says theirs are "reasonably clustered." What does that even mean? How tight is tight? How do you compare?</p>
+
+        <p>We need a number. A single value that captures how much the estimates spread. Something you can report, compare, and reason about.</p>
+
+        <p>That number is called the <em>standard error</em>.</p>
+      </section>
+
+      <section id="what-se-tells">
+        <h2>What Standard Error Tells You</h2>
+
+        <p>Think of it this way. If you ran your experiment thousands of times, you'd get thousands of estimates. Most would land somewhere near the truth, but they'd scatter around it.</p>
+
+        <p>The standard error is roughly the typical distance between an estimate and the truth. Not the maximum distance. Not the minimum. The typical one.</p>
+
+        <!-- Dartboard Visualization -->
+        <div class="viz-container">
+          <div class="dartboard-viz" id="dartboardViz">
+            <svg id="dartboardSvg" aria-label="Dartboard showing estimates scattered around true effect"></svg>
+          </div>
+          <div class="slider-container">
+            <div class="slider-row">
+              <span class="slider-label">Standard error:</span>
+              <input type="range" id="dartboardSlider" min="1" max="8" value="3" step="0.5">
+              <span class="slider-value" id="dartboardValue">SE = 3</span>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="dartboardCaption">About two-thirds of the darts land within the circle.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="histogram-se">
+        <h2>Seeing It in the Histogram</h2>
+
+        <p>You've seen sampling distributions as histograms. The standard error is just describing the width of that shape.</p>
+
+        <!-- Histogram with SE Marked -->
+        <div class="viz-container">
+          <div class="histogram-se-viz" id="histogramSeViz">
+            <svg id="histogramSeSvg" aria-label="Histogram with standard error region marked"></svg>
+          </div>
+          <div class="slider-container">
+            <div class="slider-row">
+              <span class="slider-label">Standard error:</span>
+              <input type="range" id="histogramSeSlider" min="1" max="8" value="3" step="0.5">
+              <span class="slider-value" id="histogramSeValue">SE = 3</span>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="histogramSeCaption">The shaded region is ± one standard error. About 68% of estimates fall in here.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="where-from">
+        <h2>Where Does This Number Come From?</h2>
+
+        <p>The standard error isn't magic. It comes from two things you've already met.</p>
+
+        <p>First: how much people vary in their responses. When individuals react very differently to the same strategy, your estimate can land anywhere depending on who happened to be in your sample.</p>
+
+        <p>Second: how many people you asked. More people means the extremes balance out and your estimate stabilizes.</p>
+
+        <!-- Formula Animation -->
+        <div class="viz-container">
+          <div class="formula-viz" id="formulaViz">
+            <svg id="formulaSvg" aria-label="Formula for standard error building up"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="buildFormulaBtn">Build the formula</button>
+            <button class="viz-btn" id="resetFormulaBtn" style="display: none;">Reset</button>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text" id="formulaCaption">Click to see how the formula comes together.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="playing-levers">
+        <h2>Playing With the Levers</h2>
+
+        <p>Let's make this concrete. You're planning a study on whether playing hard to get works. You need to decide how many people to recruit. What happens to your standard error as you change that number?</p>
+
+        <!-- Study Planner -->
+        <div class="viz-container">
+          <div class="planner-viz" id="plannerViz">
+            <div class="planner-section">
+              <p class="planner-title">Assumptions</p>
+              <div class="slider-row">
+                <span class="slider-label">Variance in responses:</span>
+                <input type="range" id="varianceSlider" min="5" max="30" value="15">
+                <span class="slider-value" id="varianceValue">15</span>
+              </div>
+            </div>
+            <div class="planner-section">
+              <p class="planner-title">Your Choice</p>
+              <div class="slider-row">
+                <span class="slider-label">Number of people:</span>
+                <input type="range" id="sampleSlider" min="20" max="500" value="100">
+                <span class="slider-value" id="sampleValue">n = 100</span>
+              </div>
+            </div>
+            <div class="planner-section">
+              <p class="planner-title">Result</p>
+              <div class="planner-result">
+                <div class="planner-se-value" id="plannerSeValue">0.39</div>
+                <div class="planner-interpretation" id="plannerInterpretation">Your estimate will typically be within 0.8 points of the truth</div>
+              </div>
+              <div class="mini-histogram" id="miniHistogram">
+                <svg id="miniHistogramSvg"></svg>
+              </div>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">This is the trade-off. More people costs more time and money. Fewer people means more uncertainty.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="diminishing-returns">
+        <h2>The Diminishing Returns</h2>
+
+        <p>Notice something as you drag that slider. Going from 50 to 100 people makes a big difference. Going from 450 to 500 barely changes anything.</p>
+
+        <p>This is because of the square root in the formula. To cut your standard error in half, you need four times as many people.</p>
+
+        <!-- Diminishing Returns Curve -->
+        <div class="viz-container">
+          <div class="curve-viz" id="curveViz">
+            <svg id="curveSvg" aria-label="Curve showing diminishing returns of sample size"></svg>
+          </div>
+          <div class="slider-container">
+            <div class="slider-row">
+              <span class="slider-label">Sample size:</span>
+              <input type="range" id="curveSlider" min="20" max="500" value="100">
+              <span class="slider-value" id="curveValue">n = 100</span>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">The first hundred people matter most. After that, you're chasing smaller gains.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="both-numbers">
+        <h2>Why You Need Both Numbers</h2>
+
+        <p>When someone tells you "playing hard to get increases success by 7 percentage points," you're hearing half the story.</p>
+
+        <p>Seven points with a standard error of 1? That's a finding you can trust. The true effect is almost certainly positive and probably between 5 and 9.</p>
+
+        <p>Seven points with a standard error of 8? That's barely a finding at all. The true effect could be anywhere from negative 9 to positive 23. You've learned almost nothing.</p>
+
+        <p>The estimate and the standard error come as a pair. One tells you where you landed. The other tells you how much you should trust the landing.</p>
+
+        <!-- Two Findings Comparison -->
+        <div class="viz-container">
+          <div class="comparison-viz" id="comparisonViz">
+            <div class="comparison-panel">
+              <div class="comparison-title">Study A</div>
+              <div class="comparison-stats">Estimate: 7 | SE: 1.5</div>
+              <div class="comparison-numberline" id="comparisonA">
+                <svg id="comparisonASvg"></svg>
+              </div>
+              <div class="comparison-caption">Probably between 4 and 10</div>
+            </div>
+            <div class="comparison-panel">
+              <div class="comparison-title">Study B</div>
+              <div class="comparison-stats">Estimate: 7 | SE: 7</div>
+              <div class="comparison-numberline" id="comparisonB">
+                <svg id="comparisonBSvg"></svg>
+              </div>
+              <div class="comparison-caption">Could be anywhere from -7 to +21</div>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">Same estimate. Very different conclusions.</span>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <nav class="episode-nav">
+      <a href="02-variance.html" class="episode-nav-link episode-nav-link--prev">
+        <span class="episode-nav-direction">Previous</span>
+        <span class="episode-nav-title">Why Estimates Spread</span>
+      </a>
+      <a href="#" class="episode-nav-link episode-nav-link--next episode-nav-link--disabled">
+        <span class="episode-nav-direction">Next</span>
+        <span class="episode-nav-title">Coming soon</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>
+    <p class="footer-text">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // Scroll Progress
+    const scrollProgress = document.getElementById('scrollProgress');
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      scrollProgress.style.width = scrollPercent + '%';
+    }
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    updateScrollProgress();
+
+    // TOC Toggle
+    const tocContainer = document.getElementById('tocContainer');
+    const tocToggle = document.getElementById('tocToggle');
+    tocToggle.addEventListener('click', () => tocContainer.classList.toggle('open'));
+    document.addEventListener('click', (e) => {
+      if (!tocContainer.contains(e.target)) tocContainer.classList.remove('open');
+    });
+
+    // Active section highlighting
+    const sections = document.querySelectorAll('article section[id]');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 150;
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          tocLinks.forEach((link) => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + sectionId) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', highlightActiveSection, { passive: true });
+    highlightActiveSection();
+
+    // Smooth scroll for TOC
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+          tocContainer.classList.remove('open');
+        }
+      });
+    });
+
+    // Box-Muller for normal distribution
+    function boxMullerRandom() {
+      let u1 = Math.random();
+      let u2 = Math.random();
+      while (u1 === 0) u1 = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    }
+
+    // Seeded random
+    function seededRandom(seed) {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // =====================
+    // Dartboard Visualization
+    // =====================
+
+    let dartPositions = [];
+
+    function generateDarts(se, count = 30) {
+      dartPositions = [];
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.abs(boxMullerRandom() * se);
+        dartPositions.push({
+          x: Math.cos(angle) * distance,
+          y: Math.sin(angle) * distance
+        });
+      }
+    }
+
+    function createDartboard(se) {
+      const svg = document.getElementById('dartboardSvg');
+      const container = document.getElementById('dartboardViz');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const size = Math.min(rect.width, rect.height);
+      svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+      const center = size / 2;
+      const maxRadius = size * 0.4;
+      const scale = maxRadius / 10; // 10 units = maxRadius
+
+      generateDarts(se);
+
+      let svgContent = '';
+
+      // Background rings
+      for (let r = 2; r <= 10; r += 2) {
+        svgContent += `<circle class="ring" cx="${center}" cy="${center}" r="${r * scale}" />`;
+      }
+
+      // SE circle
+      const seRadius = se * scale;
+      svgContent += `<circle class="se-circle" cx="${center}" cy="${center}" r="${seRadius}" />`;
+
+      // Bullseye
+      svgContent += `<circle class="bullseye" cx="${center}" cy="${center}" r="6" />`;
+
+      // Darts
+      dartPositions.forEach((dart, i) => {
+        const x = center + dart.x * scale;
+        const y = center + dart.y * scale;
+        svgContent += `<circle class="dart" cx="${x}" cy="${y}" r="4" style="animation-delay: ${i * 30}ms" />`;
+      });
+
+      // Labels
+      svgContent += `<text class="label" x="${center}" y="${center + maxRadius + 25}">True effect: 5</text>`;
+      svgContent += `<text class="se-label" x="${center + seRadius + 10}" y="${center - 5}">SE = ${se}</text>`;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function setupDartboard() {
+      const slider = document.getElementById('dartboardSlider');
+      const valueDisplay = document.getElementById('dartboardValue');
+      const caption = document.getElementById('dartboardCaption');
+
+      if (!slider) return;
+
+      function update() {
+        const se = parseFloat(slider.value);
+        valueDisplay.textContent = `SE = ${se}`;
+        caption.textContent = `Standard error = ${se}. This is how much estimates typically miss by.`;
+        createDartboard(se);
+      }
+
+      slider.addEventListener('input', update);
+      update();
+    }
+
+    // =====================
+    // Histogram with SE Visualization
+    // =====================
+
+    function createHistogramSe(se) {
+      const svg = document.getElementById('histogramSeSvg');
+      const container = document.getElementById('histogramSeViz');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const margin = { top: 30, right: 30, bottom: 40, left: 40 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+
+      const TRUE_EFFECT = 5;
+      const MIN_X = -10;
+      const MAX_X = 20;
+      const BIN_WIDTH = 1;
+
+      // Generate experiments with given SE
+      const bins = {};
+      for (let x = MIN_X; x < MAX_X; x += BIN_WIDTH) {
+        bins[x] = 0;
+      }
+
+      for (let i = 0; i < 200; i++) {
+        const estimate = TRUE_EFFECT + boxMullerRandom() * se;
+        const bin = Math.floor((estimate - MIN_X) / BIN_WIDTH) * BIN_WIDTH + MIN_X;
+        const clampedBin = Math.max(MIN_X, Math.min(MAX_X - BIN_WIDTH, bin));
+        bins[clampedBin] = (bins[clampedBin] || 0) + 1;
+      }
+
+      const maxCount = Math.max(...Object.values(bins));
+      const xScale = (val) => margin.left + ((val - MIN_X) / (MAX_X - MIN_X)) * chartWidth;
+      const barWidth = (BIN_WIDTH / (MAX_X - MIN_X)) * chartWidth;
+
+      let svgContent = '';
+
+      // SE region (shaded)
+      const leftSe = xScale(TRUE_EFFECT - se);
+      const rightSe = xScale(TRUE_EFFECT + se);
+      svgContent += `<rect class="se-region" x="${leftSe}" y="${margin.top}" width="${rightSe - leftSe}" height="${chartHeight}" />`;
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + chartHeight}" x2="${margin.left + chartWidth}" y2="${margin.top + chartHeight}" />`;
+
+      // Bars
+      for (let binStart = MIN_X; binStart < MAX_X; binStart += BIN_WIDTH) {
+        const count = bins[binStart] || 0;
+        if (count > 0) {
+          const x = xScale(binStart);
+          const barHeight = (count / maxCount) * chartHeight;
+          const y = margin.top + chartHeight - barHeight;
+          svgContent += `<rect class="bar" x="${x}" y="${y}" width="${barWidth - 1}" height="${barHeight}" />`;
+        }
+      }
+
+      // SE lines
+      svgContent += `<line class="se-line" x1="${leftSe}" y1="${margin.top}" x2="${leftSe}" y2="${margin.top + chartHeight}" />`;
+      svgContent += `<line class="se-line" x1="${rightSe}" y1="${margin.top}" x2="${rightSe}" y2="${margin.top + chartHeight}" />`;
+
+      // True effect line
+      const trueX = xScale(TRUE_EFFECT);
+      svgContent += `<line class="true-effect-line" x1="${trueX}" y1="${margin.top}" x2="${trueX}" y2="${margin.top + chartHeight}" />`;
+
+      // X-axis ticks
+      for (let x = -10; x <= 20; x += 5) {
+        const xPos = xScale(x);
+        svgContent += `<text class="tick-label" x="${xPos}" y="${margin.top + chartHeight + 15}">${x}</text>`;
+      }
+
+      svgContent += `<text class="axis-title" x="${margin.left + chartWidth / 2}" y="${height - 8}">Estimated effect</text>`;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function setupHistogramSe() {
+      const slider = document.getElementById('histogramSeSlider');
+      const valueDisplay = document.getElementById('histogramSeValue');
+      const caption = document.getElementById('histogramSeCaption');
+
+      if (!slider) return;
+
+      function update() {
+        const se = parseFloat(slider.value);
+        valueDisplay.textContent = `SE = ${se}`;
+        caption.textContent = `Small standard error: estimates cluster. Large standard error: estimates scatter.`;
+        createHistogramSe(se);
+      }
+
+      slider.addEventListener('input', update);
+      update();
+    }
+
+    // =====================
+    // Formula Animation
+    // =====================
+
+    let formulaStep = 0;
+
+    function createFormula() {
+      const svg = document.getElementById('formulaSvg');
+      const container = document.getElementById('formulaViz');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const centerY = height / 2;
+
+      let svgContent = '';
+
+      // Step 1: Variance box
+      svgContent += `
+        <g class="formula-element" id="formulaStep1">
+          <rect class="formula-box" x="80" y="${centerY - 40}" width="140" height="50" />
+          <text class="formula-text" x="150" y="${centerY - 15}">Variance</text>
+          <text class="formula-label" x="150" y="${centerY + 30}">Fixed by the world</text>
+        </g>
+      `;
+
+      // Step 2: Sample size box
+      svgContent += `
+        <g class="formula-element" id="formulaStep2">
+          <rect class="formula-box" x="${width - 220}" y="${centerY - 40}" width="140" height="50" />
+          <text class="formula-text" x="${width - 150}" y="${centerY - 15}">Sample size (n)</text>
+          <text class="formula-label" x="${width - 150}" y="${centerY + 30}">Your choice</text>
+        </g>
+      `;
+
+      // Step 3: Formula assembles
+      svgContent += `
+        <g class="formula-element" id="formulaStep3">
+          <text class="formula-text" x="${width/2 - 60}" y="${centerY - 25}">Variance</text>
+          <line stroke="var(--text-primary)" stroke-width="2" x1="${width/2 - 100}" y1="${centerY}" x2="${width/2 + 20}" y2="${centerY}" />
+          <text class="formula-text" x="${width/2 - 60}" y="${centerY + 30}">n</text>
+          <text class="formula-symbol" x="${width/2 - 130}" y="${centerY}">√</text>
+          <path d="M ${width/2 - 115} ${centerY - 45} L ${width/2 - 115} ${centerY + 45} L ${width/2 + 35} ${centerY + 45}"
+                stroke="var(--text-primary)" stroke-width="2" fill="none" />
+        </g>
+      `;
+
+      // Step 4: Complete formula
+      svgContent += `
+        <g class="formula-element" id="formulaStep4">
+          <text class="formula-symbol" x="${width/2 + 80}" y="${centerY}">= SE</text>
+          <text class="formula-label" x="${width/2}" y="${centerY + 70}">More variance pushes it up. More people pushes it down.</text>
+        </g>
+      `;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function animateFormula() {
+      formulaStep++;
+      const step = document.getElementById(`formulaStep${formulaStep}`);
+      if (step) {
+        step.classList.add('visible');
+      }
+
+      const caption = document.getElementById('formulaCaption');
+      const captions = [
+        'Click to see how the formula comes together.',
+        'This is fixed. It\'s a fact about the world.',
+        'This is your choice. You decide how many people to include.',
+        'The formula assembles...',
+        'SE = √(variance / n). More variance pushes it up. More people pushes it down.'
+      ];
+      if (caption && captions[formulaStep]) {
+        caption.textContent = captions[formulaStep];
+      }
+
+      if (formulaStep >= 4) {
+        document.getElementById('buildFormulaBtn').style.display = 'none';
+        document.getElementById('resetFormulaBtn').style.display = 'inline-block';
+      }
+    }
+
+    function resetFormula() {
+      formulaStep = 0;
+      for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`formulaStep${i}`);
+        if (step) step.classList.remove('visible');
+      }
+      document.getElementById('buildFormulaBtn').style.display = 'inline-block';
+      document.getElementById('resetFormulaBtn').style.display = 'none';
+      document.getElementById('formulaCaption').textContent = 'Click to see how the formula comes together.';
+    }
+
+    function setupFormula() {
+      createFormula();
+      document.getElementById('buildFormulaBtn')?.addEventListener('click', animateFormula);
+      document.getElementById('resetFormulaBtn')?.addEventListener('click', resetFormula);
+    }
+
+    // =====================
+    // Study Planner
+    // =====================
+
+    function updatePlanner() {
+      const varianceSlider = document.getElementById('varianceSlider');
+      const sampleSlider = document.getElementById('sampleSlider');
+      const varianceValue = document.getElementById('varianceValue');
+      const sampleValue = document.getElementById('sampleValue');
+      const seValue = document.getElementById('plannerSeValue');
+      const interpretation = document.getElementById('plannerInterpretation');
+
+      if (!varianceSlider || !sampleSlider) return;
+
+      const variance = parseFloat(varianceSlider.value);
+      const n = parseFloat(sampleSlider.value);
+
+      varianceValue.textContent = variance;
+      sampleValue.textContent = `n = ${n}`;
+
+      const se = Math.sqrt(variance / n);
+      seValue.textContent = se.toFixed(2);
+
+      const margin = (se * 2).toFixed(1);
+      interpretation.textContent = `Your estimate will typically be within ${margin} points of the truth`;
+
+      // Update mini histogram
+      createMiniHistogram(se);
+    }
+
+    function createMiniHistogram(se) {
+      const svg = document.getElementById('miniHistogramSvg');
+      const container = document.getElementById('miniHistogram');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const margin = { top: 5, right: 10, bottom: 15, left: 10 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+
+      const TRUE_EFFECT = 5;
+      const MIN_X = 0;
+      const MAX_X = 10;
+      const BIN_WIDTH = 0.5;
+
+      const bins = {};
+      for (let x = MIN_X; x < MAX_X; x += BIN_WIDTH) {
+        bins[x] = 0;
+      }
+
+      for (let i = 0; i < 100; i++) {
+        const estimate = TRUE_EFFECT + boxMullerRandom() * se;
+        const bin = Math.floor((estimate - MIN_X) / BIN_WIDTH) * BIN_WIDTH + MIN_X;
+        const clampedBin = Math.max(MIN_X, Math.min(MAX_X - BIN_WIDTH, bin));
+        if (bins[clampedBin] !== undefined) bins[clampedBin]++;
+      }
+
+      const maxCount = Math.max(...Object.values(bins), 1);
+      const xScale = (val) => margin.left + ((val - MIN_X) / (MAX_X - MIN_X)) * chartWidth;
+      const barWidth = (BIN_WIDTH / (MAX_X - MIN_X)) * chartWidth;
+
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + chartHeight}" x2="${margin.left + chartWidth}" y2="${margin.top + chartHeight}" />`;
+
+      // Bars
+      for (let binStart = MIN_X; binStart < MAX_X; binStart += BIN_WIDTH) {
+        const count = bins[binStart] || 0;
+        if (count > 0) {
+          const x = xScale(binStart);
+          const barHeight = (count / maxCount) * chartHeight;
+          const y = margin.top + chartHeight - barHeight;
+          svgContent += `<rect class="bar" x="${x}" y="${y}" width="${barWidth - 1}" height="${barHeight}" />`;
+        }
+      }
+
+      svg.innerHTML = svgContent;
+    }
+
+    function setupPlanner() {
+      const varianceSlider = document.getElementById('varianceSlider');
+      const sampleSlider = document.getElementById('sampleSlider');
+
+      if (varianceSlider) varianceSlider.addEventListener('input', updatePlanner);
+      if (sampleSlider) sampleSlider.addEventListener('input', updatePlanner);
+      updatePlanner();
+    }
+
+    // =====================
+    // Diminishing Returns Curve
+    // =====================
+
+    function createCurve(currentN) {
+      const svg = document.getElementById('curveSvg');
+      const container = document.getElementById('curveViz');
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const margin = { top: 30, right: 30, bottom: 50, left: 60 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+
+      const VARIANCE = 15;
+      const MIN_N = 20;
+      const MAX_N = 500;
+      const MAX_SE = Math.sqrt(VARIANCE / MIN_N);
+
+      const xScale = (n) => margin.left + ((n - MIN_N) / (MAX_N - MIN_N)) * chartWidth;
+      const yScale = (se) => margin.top + (1 - se / MAX_SE) * chartHeight;
+      const getSE = (n) => Math.sqrt(VARIANCE / n);
+
+      let svgContent = '';
+
+      // Axes
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + chartHeight}" x2="${margin.left + chartWidth}" y2="${margin.top + chartHeight}" />`;
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartHeight}" />`;
+
+      // Build curve path
+      let pathD = `M ${xScale(MIN_N)} ${yScale(getSE(MIN_N))}`;
+      for (let n = MIN_N + 10; n <= MAX_N; n += 10) {
+        pathD += ` L ${xScale(n)} ${yScale(getSE(n))}`;
+      }
+      svgContent += `<path class="curve-path" d="${pathD}" />`;
+
+      // Markers at specific points
+      const markers = [50, 100, 200, 400];
+      markers.forEach(n => {
+        const x = xScale(n);
+        const se = getSE(n);
+        const y = yScale(se);
+        svgContent += `<line class="marker-line" x1="${x}" y1="${y}" x2="${x}" y2="${margin.top + chartHeight}" />`;
+        svgContent += `<text class="marker-label" x="${x}" y="${margin.top + chartHeight + 12}" text-anchor="middle">n=${n}</text>`;
+        svgContent += `<text class="marker-label" x="${x}" y="${y - 8}" text-anchor="middle">SE=${se.toFixed(2)}</text>`;
+      });
+
+      // Current position dot
+      const currentSE = getSE(currentN);
+      const dotX = xScale(currentN);
+      const dotY = yScale(currentSE);
+      svgContent += `<circle class="curve-dot" cx="${dotX}" cy="${dotY}" r="8" />`;
+
+      // Axis labels
+      svgContent += `<text class="axis-label" x="${margin.left + chartWidth / 2}" y="${height - 10}">Sample size</text>`;
+      svgContent += `<text class="axis-label" x="${15}" y="${margin.top + chartHeight / 2}" transform="rotate(-90, 15, ${margin.top + chartHeight / 2})">Standard error</text>`;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function setupCurve() {
+      const slider = document.getElementById('curveSlider');
+      const valueDisplay = document.getElementById('curveValue');
+
+      if (!slider) return;
+
+      function update() {
+        const n = parseInt(slider.value);
+        valueDisplay.textContent = `n = ${n}`;
+        createCurve(n);
+      }
+
+      slider.addEventListener('input', update);
+      update();
+    }
+
+    // =====================
+    // Two Findings Comparison
+    // =====================
+
+    function createComparison(svgId, estimate, se) {
+      const svg = document.getElementById(svgId);
+      const container = svg?.parentElement;
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const margin = { top: 20, right: 20, bottom: 25, left: 20 };
+      const chartWidth = width - margin.left - margin.right;
+
+      const MIN_X = -15;
+      const MAX_X = 25;
+      const xScale = (val) => margin.left + ((val - MIN_X) / (MAX_X - MIN_X)) * chartWidth;
+
+      const centerY = height / 2;
+
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${centerY + 15}" x2="${margin.left + chartWidth}" y2="${centerY + 15}" />`;
+
+      // Uncertainty band
+      const leftBound = xScale(estimate - se * 2);
+      const rightBound = xScale(estimate + se * 2);
+      svgContent += `<rect class="uncertainty-band" x="${leftBound}" y="${centerY - 20}" width="${rightBound - leftBound}" height="40" rx="4" />`;
+
+      // Estimate dot
+      const estimateX = xScale(estimate);
+      svgContent += `<circle class="estimate-dot" cx="${estimateX}" cy="${centerY}" r="6" />`;
+
+      // Tick marks
+      for (let x = -10; x <= 20; x += 10) {
+        const xPos = xScale(x);
+        svgContent += `<text class="tick-label" x="${xPos}" y="${centerY + 30}">${x}</text>`;
+      }
+
+      // Zero line
+      const zeroX = xScale(0);
+      svgContent += `<line stroke="rgba(240,240,240,0.3)" stroke-width="1" stroke-dasharray="4 4" x1="${zeroX}" y1="${centerY - 25}" x2="${zeroX}" y2="${centerY + 15}" />`;
+
+      svg.innerHTML = svgContent;
+    }
+
+    function setupComparison() {
+      createComparison('comparisonASvg', 7, 1.5);
+      createComparison('comparisonBSvg', 7, 7);
+    }
+
+    // =====================
+    // Initialize All
+    // =====================
+
+    function initAllViz() {
+      setupDartboard();
+      setupHistogramSe();
+      setupFormula();
+      setupPlanner();
+      setupCurve();
+      setupComparison();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAllViz);
+    } else {
+      initAllViz();
+    }
+
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        setupDartboard();
+        setupHistogramSe();
+        createFormula();
+        updatePlanner();
+        setupCurve();
+        setupComparison();
+      }, 200);
+    });
+  </script>
+</body>
+</html>

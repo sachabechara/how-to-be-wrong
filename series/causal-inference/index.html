@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Causal Inference: From Intuition to Identification. A comprehensive series building the logic of causal thinking from scratch.">
+  <title>Causal Inference | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.95);
+      --text-body: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background Animation Canvas */
+    #bgCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Page Wrapper */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Navigation */
+    .top-nav {
+      padding: 2rem;
+    }
+
+    .back-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Main Content */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+    }
+
+    /* Header Section */
+    .series-header {
+      text-align: center;
+      margin-bottom: 5rem;
+      padding-top: 2rem;
+    }
+
+    .series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-body);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+    }
+
+    .series-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3.5rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+
+    .series-subtitle {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.4rem;
+      color: var(--text-body);
+      font-style: italic;
+    }
+
+    /* Section Styles */
+    section {
+      margin-bottom: 5rem;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 2rem;
+    }
+
+    /* Introduction */
+    .introduction p {
+      font-size: 1.15rem;
+      color: var(--text-body);
+      margin-bottom: 1.5rem;
+      line-height: 1.9;
+    }
+
+    .introduction p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Learning Boxes */
+    .learning-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .learning-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(78, 204, 163, 0.35);
+      border-radius: 8px;
+      padding: 1.75rem;
+    }
+
+    .learning-box h3 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+    }
+
+    .learning-box ul {
+      list-style: none;
+    }
+
+    .learning-box li {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.95rem;
+      color: var(--text-body);
+      padding: 0.4rem 0;
+      padding-left: 1rem;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .learning-box li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.85rem;
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      opacity: 0.5;
+      border-radius: 50%;
+    }
+
+    /* Formalism Section */
+    .formalism-intro {
+      font-size: 1.1rem;
+      color: var(--text-body);
+      margin-bottom: 3rem;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .formalism-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .formalism-subsection h4 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-body);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(78, 204, 163, 0.4);
+    }
+
+    .formalism-subsection ul {
+      list-style: none;
+    }
+
+    .formalism-subsection li {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-body);
+      padding: 0.6rem 0;
+      line-height: 1.6;
+      border-bottom: 1px solid rgba(240, 240, 240, 0.03);
+    }
+
+    .formalism-subsection li:last-child {
+      border-bottom: none;
+    }
+
+    .formalism-closing {
+      font-size: 1.05rem;
+      color: var(--text-body);
+      text-align: center;
+      font-style: italic;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.2);
+    }
+
+    /* Difficulty Progression */
+    .progression-container {
+      margin-bottom: 2rem;
+    }
+
+    .progression-track {
+      position: relative;
+      height: 60px;
+      margin-bottom: 1.5rem;
+    }
+
+    .progression-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(to right,
+        var(--accent) 0%,
+        var(--accent) 20%,
+        var(--warning) 50%,
+        var(--highlight) 80%,
+        var(--text-muted) 100%
+      );
+      transform: translateY(-50%);
+      border-radius: 1px;
+    }
+
+    .progression-stages {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progression-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 120px;
+    }
+
+    .stage-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .stage-dot.foundations { background: var(--accent); }
+    .stage-dot.mechanics { background: var(--accent); }
+    .stage-dot.inference { background: var(--warning); }
+    .stage-dot.interpretation { background: var(--highlight); }
+
+    .stage-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-body);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+
+    .stage-episodes {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .progression-descriptions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .progression-desc {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.85rem;
+      color: var(--text-body);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .progression-caption {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.95rem;
+      color: var(--text-body);
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* Prerequisites */
+    .prerequisites {
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid rgba(78, 204, 163, 0.5);
+      padding: 1.5rem 2rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .prerequisites p {
+      font-size: 1rem;
+      color: var(--text-body);
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+
+    .prerequisites p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Episodes Section */
+    .episodes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .episode-item {
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 1.5rem;
+      padding: 1.25rem 1.5rem;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(240, 240, 240, 0.25);
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.3s var(--ease-in-out);
+      align-items: center;
+    }
+
+    .episode-item.available:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(78, 204, 163, 0.4);
+      transform: translateX(4px);
+    }
+
+    .episode-item.forthcoming {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-body);
+    }
+
+    .episode-item.available .episode-number {
+      color: var(--accent);
+    }
+
+    .episode-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+
+    .episode-item.forthcoming .episode-title {
+      color: var(--text-secondary);
+    }
+
+    .episode-desc {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-body);
+    }
+
+    .episode-status {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.3rem 0.75rem;
+      border-radius: 12px;
+    }
+
+    .episode-status.available {
+      color: var(--accent);
+      background: rgba(78, 204, 163, 0.1);
+    }
+
+    .episode-status.forthcoming {
+      color: var(--text-muted);
+      background: rgba(240, 240, 240, 0.05);
+    }
+
+    /* Footer */
+    footer {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+      text-align: center;
+      border-top: 1px solid rgba(240, 240, 240, 0.08);
+    }
+
+    .footer-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-link:hover {
+      color: var(--accent);
+    }
+
+    .footer-link svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .learning-grid,
+      .formalism-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .progression-descriptions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html { font-size: 16px; }
+
+      main { padding: 0 1.5rem 4rem; }
+
+      .series-title { font-size: 2.5rem; }
+
+      .episode-item {
+        grid-template-columns: 40px 1fr;
+        gap: 1rem;
+      }
+
+      .episode-status {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: 0.5rem;
+      }
+
+      .progression-track {
+        display: none;
+      }
+
+      .progression-descriptions {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .progression-desc {
+        text-align: left;
+        padding-left: 1rem;
+        border-left: 2px solid var(--text-muted);
+      }
+
+      .progression-desc:nth-child(1) { border-color: var(--accent); }
+      .progression-desc:nth-child(2) { border-color: var(--accent); }
+      .progression-desc:nth-child(3) { border-color: var(--warning); }
+      .progression-desc:nth-child(4) { border-color: var(--highlight); }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 15px; }
+
+      .top-nav { padding: 1.5rem 1rem; }
+
+      main { padding: 0 1rem 3rem; }
+
+      .series-title { font-size: 2rem; }
+
+      .series-header { margin-bottom: 3rem; }
+
+      section { margin-bottom: 3.5rem; }
+
+      .learning-box { padding: 1.25rem; }
+
+      .episode-item { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Animation -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="page-wrapper">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <a href="../index.html" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        All Series
+      </a>
+    </nav>
+
+    <main>
+      <!-- Header -->
+      <header class="series-header">
+        <p class="series-label">Series</p>
+        <h1 class="series-title">Causal Inference</h1>
+        <p class="series-subtitle">From Intuition to Identification</p>
+      </header>
+
+      <!-- Introduction -->
+      <section class="introduction">
+        <p>Does playing hard to get actually work? Do morning routines cause success? Does therapy help, or do people who seek therapy recover on their own?</p>
+
+        <p>These questions feel answerable. You see patterns, you draw conclusions. But patterns deceive. The confident conclusions we draw from observation often collapse under scrutiny.</p>
+
+        <p>This series builds the logic of causal thinking from scratch. No prerequisites beyond curiosity. We start with intuition — why the obvious approach fails — and slowly assemble the machinery that lets us make defensible causal claims.</p>
+
+        <p>By the end, you'll have both the geometric intuition and the formal apparatus to reason rigorously about cause and effect.</p>
+      </section>
+
+      <!-- What You'll Learn -->
+      <section>
+        <h2 class="section-title">What You'll Learn</h2>
+        <div class="learning-grid">
+          <div class="learning-box">
+            <h3>Conceptual Foundations</h3>
+            <ul>
+              <li>The selection problem and confounding</li>
+              <li>Potential outcomes framework (Rubin causal model)</li>
+              <li>SUTVA and the no-interference assumption</li>
+              <li>Identification vs estimation</li>
+              <li>Internal vs external validity</li>
+              <li>The role of randomization in breaking confounding</li>
+            </ul>
+          </div>
+          <div class="learning-box">
+            <h3>Statistical Machinery</h3>
+            <ul>
+              <li>Sampling distributions and their properties</li>
+              <li>Standard error derivation from first principles</li>
+              <li>Variance decomposition and the law of total variance</li>
+              <li>Properties of estimators: unbiasedness, consistency, efficiency</li>
+              <li>The Central Limit Theorem and asymptotic normality</li>
+              <li>Neyman-Pearson hypothesis testing framework</li>
+              <li>Confidence interval construction and interpretation</li>
+              <li>Power analysis and minimum detectable effects</li>
+            </ul>
+          </div>
+          <div class="learning-box">
+            <h3>Advanced Topics</h3>
+            <ul>
+              <li>Average Treatment Effect (ATE) vs ATT vs ATC vs LATE</li>
+              <li>Heterogeneous treatment effects and CATE</li>
+              <li>Variance estimation under random assignment</li>
+              <li>Finite-sample vs superpopulation perspectives</li>
+              <li>Sharp vs weak null hypotheses</li>
+              <li>Fisher randomization inference</li>
+              <li>Regression adjustment in experiments</li>
+              <li>Covariate balance and its role in precision</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- On Formalism -->
+      <section>
+        <h2 class="section-title">On Formalism</h2>
+        <p class="formalism-intro">This series does not shy away from mathematics. You will encounter formal notation, derivations, and proofs — but always motivated by intuition first.</p>
+
+        <div class="formalism-grid">
+          <div class="formalism-subsection">
+            <h4>Variance & Covariance Properties</h4>
+            <ul>
+              <li>Var(X + c) = Var(X)</li>
+              <li>Var(cX) = c²Var(X)</li>
+              <li>Var(X + Y) = Var(X) + Var(Y) + 2Cov(X,Y)</li>
+              <li>Cov(X, Y) = E[XY] - E[X]E[Y]</li>
+              <li>Cov(aX, bY) = ab·Cov(X,Y)</li>
+              <li>Law of total variance: Var(Y) = E[Var(Y|X)] + Var(E[Y|X])</li>
+            </ul>
+          </div>
+          <div class="formalism-subsection">
+            <h4>Named Theorems & Inequalities</h4>
+            <ul>
+              <li>König-Huygens theorem: Var(X) = E[X²] - E[X]²</li>
+              <li>Cauchy-Schwarz inequality: |Cov(X,Y)| ≤ SD(X)·SD(Y)</li>
+              <li>Chebyshev's inequality: probability bounds from variance</li>
+              <li>Gauss-Markov theorem: OLS as best linear unbiased estimator</li>
+              <li>Cramér-Rao lower bound: minimum variance of unbiased estimators</li>
+              <li>Central Limit Theorem: asymptotic normality of sample means</li>
+            </ul>
+          </div>
+          <div class="formalism-subsection">
+            <h4>Estimator Derivations</h4>
+            <ul>
+              <li>Unbiasedness of the sample mean</li>
+              <li>Derivation of Var(X̄) = σ²/n</li>
+              <li>Unbiasedness of difference-in-means under randomization</li>
+              <li>Variance of the ATE estimator</li>
+              <li>Neyman's repeated sampling framework</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="formalism-closing">The goal is not mathematical sophistication for its own sake, but a deep understanding of why the machinery works — and when it breaks.</p>
+      </section>
+
+      <!-- Difficulty Progression -->
+      <section>
+        <h2 class="section-title">Difficulty Progression</h2>
+        <div class="progression-container">
+          <div class="progression-track">
+            <div class="progression-line"></div>
+            <div class="progression-stages">
+              <div class="progression-stage">
+                <div class="stage-dot foundations"></div>
+                <span class="stage-label">Foundations</span>
+                <span class="stage-episodes">0–3</span>
+              </div>
+              <div class="progression-stage">
+                <div class="stage-dot mechanics"></div>
+                <span class="stage-label">Mechanics</span>
+                <span class="stage-episodes">4–8</span>
+              </div>
+              <div class="progression-stage">
+                <div class="stage-dot inference"></div>
+                <span class="stage-label">Inference</span>
+                <span class="stage-episodes">9–12</span>
+              </div>
+              <div class="progression-stage">
+                <div class="stage-dot interpretation"></div>
+                <span class="stage-label">Interpretation</span>
+                <span class="stage-episodes">13–17</span>
+              </div>
+            </div>
+          </div>
+          <div class="progression-descriptions">
+            <p class="progression-desc">Conceptual, building intuition, minimal formalism</p>
+            <p class="progression-desc">Variance properties, estimator derivations, proofs introduced</p>
+            <p class="progression-desc">CLT, hypothesis testing, confidence intervals, power</p>
+            <p class="progression-desc">Heterogeneity, prediction, philosophy of probability</p>
+          </div>
+          <p class="progression-caption">Each episode builds on the last. The math arrives only after the intuition is solid.</p>
+        </div>
+      </section>
+
+      <!-- Prerequisites -->
+      <section>
+        <h2 class="section-title">Prerequisites</h2>
+        <div class="prerequisites">
+          <p>Formal prerequisites: none. Comfort with high school algebra helps but isn't required.</p>
+          <p>Everything is built from scratch. If you've never seen a summation sign or a square root, you'll learn what they mean here. If you have a statistics background, you may find fresh perspectives on familiar concepts.</p>
+        </div>
+      </section>
+
+      <!-- Episodes -->
+      <section>
+        <h2 class="section-title">Episodes</h2>
+        <div class="episodes-list">
+          <a href="00-the-causal-problem.html" class="episode-item available">
+            <span class="episode-number">00</span>
+            <div class="episode-info">
+              <span class="episode-title">Why Seeing Isn't Believing</span>
+              <span class="episode-desc">The pattern that deceives</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <a href="00-5-potential-outcomes.html" class="episode-item available">
+            <span class="episode-number">00.5</span>
+            <div class="episode-info">
+              <span class="episode-title">The Two Worlds Problem</span>
+              <span class="episode-desc">Potential outcomes and the fundamental problem</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <a href="00-75-assumptions.html" class="episode-item available">
+            <span class="episode-number">00.75</span>
+            <div class="episode-info">
+              <span class="episode-title">What Has to Be True</span>
+              <span class="episode-desc">SUTVA, compliance, and attrition</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <a href="01-sampling-distributions.html" class="episode-item available">
+            <span class="episode-number">01</span>
+            <div class="episode-info">
+              <span class="episode-title">Running It Again</span>
+              <span class="episode-desc">Sampling distributions and repeated experiments</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <a href="02-variance.html" class="episode-item available">
+            <span class="episode-number">02</span>
+            <div class="episode-info">
+              <span class="episode-title">Why Estimates Spread</span>
+              <span class="episode-desc">Variance and its sources</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <a href="03-standard-error.html" class="episode-item available">
+            <span class="episode-number">03</span>
+            <div class="episode-info">
+              <span class="episode-title">Measuring the Wiggle</span>
+              <span class="episode-desc">Standard error from first principles</span>
+            </div>
+            <span class="episode-status available">Available</span>
+          </a>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">04</span>
+            <div class="episode-info">
+              <span class="episode-title">How Variance Combines</span>
+              <span class="episode-desc">Addition rules, independence, and proofs</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">05</span>
+            <div class="episode-info">
+              <span class="episode-title">Covariance</span>
+              <span class="episode-desc">Measuring how variables move together</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">06</span>
+            <div class="episode-info">
+              <span class="episode-title">Variance of Differences</span>
+              <span class="episode-desc">The key formula for treatment effects</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">07</span>
+            <div class="episode-info">
+              <span class="episode-title">The Estimator's Variance</span>
+              <span class="episode-desc">Deriving SE for the difference in means</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">08</span>
+            <div class="episode-info">
+              <span class="episode-title">Properties of Estimators</span>
+              <span class="episode-desc">Unbiasedness, consistency, efficiency</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">09</span>
+            <div class="episode-info">
+              <span class="episode-title">The Central Limit Theorem</span>
+              <span class="episode-desc">Why normality emerges from chaos</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">10</span>
+            <div class="episode-info">
+              <span class="episode-title">Hypothesis Testing</span>
+              <span class="episode-desc">Neyman-Pearson framework and decision rules</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">11</span>
+            <div class="episode-info">
+              <span class="episode-title">Confidence Intervals</span>
+              <span class="episode-desc">Construction, interpretation, and common errors</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">12</span>
+            <div class="episode-info">
+              <span class="episode-title">Power</span>
+              <span class="episode-desc">Designing studies that can detect real effects</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">13</span>
+            <div class="episode-info">
+              <span class="episode-title">From Individuals to Averages</span>
+              <span class="episode-desc">ATE, ATT, ATC, and what experiments estimate</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">14</span>
+            <div class="episode-info">
+              <span class="episode-title">The Prediction Problem</span>
+              <span class="episode-desc">Applying population estimates to individuals</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">15</span>
+            <div class="episode-info">
+              <span class="episode-title">Heterogeneous Effects</span>
+              <span class="episode-desc">CATE and treatment effect variation</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">16</span>
+            <div class="episode-info">
+              <span class="episode-title">Variance Decomposition</span>
+              <span class="episode-desc">Explained vs unexplained variation</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+
+          <div class="episode-item forthcoming">
+            <span class="episode-number">17</span>
+            <div class="episode-info">
+              <span class="episode-title">The Philosophy of Variation</span>
+              <span class="episode-desc">Frequentism, Bayesianism, and epistemic humility</span>
+            </div>
+            <span class="episode-status forthcoming">Forthcoming</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a href="../index.html" class="footer-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to all series
+      </a>
+    </footer>
+  </div>
+
+  <script>
+    // =====================
+    // 3D Joint Probability Distribution - HIGH VISIBILITY VERSION
+    // =====================
+
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let animationId;
+    let time = 0;
+
+    function setupCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    }
+
+    // Bivariate normal PDF
+    function bivariateNormal(x, y, rho) {
+      const factor = 1 - rho * rho;
+      if (factor <= 0) return 0;
+      const exp = -(x * x - 2 * rho * x * y + y * y) / (2 * factor);
+      return Math.exp(exp);
+    }
+
+    // 3D transformations
+    function rotateY(x, y, z, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: x * cos - z * sin,
+        y: y,
+        z: x * sin + z * cos
+      };
+    }
+
+    function rotateX(x, y, z, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: x,
+        y: y * cos - z * sin,
+        z: y * sin + z * cos
+      };
+    }
+
+    // Project to screen with depth
+    function project(x, y, z, cx, cy, scale) {
+      const perspective = 500 / (500 + z * 80);
+      return {
+        x: cx + x * scale * perspective,
+        y: cy - y * scale * perspective,
+        z: z
+      };
+    }
+
+    // Draw a 3D surface with MUCH higher visibility
+    function drawSurface(cx, cy, size, rotYAngle, tiltX, rho, isLeft) {
+      const gridSize = 20;
+      const range = 2.5;
+      const heightScale = 2.0;
+
+      // Generate all points with heights
+      const points = [];
+      const heights = [];
+      for (let i = 0; i <= gridSize; i++) {
+        const row = [];
+        const rowHeights = [];
+        for (let j = 0; j <= gridSize; j++) {
+          const gx = (i / gridSize - 0.5) * range * 2;
+          const gz = (j / gridSize - 0.5) * range * 2;
+          const gy = bivariateNormal(gx, gz, rho) * heightScale;
+          rowHeights.push(gy);
+
+          // Apply rotations
+          let p = rotateY(gx, gy, gz, rotYAngle);
+          p = rotateX(p.x, p.y, p.z, tiltX);
+
+          // Project
+          const proj = project(p.x, p.y, p.z, cx, cy, size);
+          row.push(proj);
+        }
+        points.push(row);
+        heights.push(rowHeights);
+      }
+
+      // Sort quads by depth for proper rendering (painter's algorithm)
+      const quads = [];
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const p1 = points[i][j];
+          const p2 = points[i + 1][j];
+          const p3 = points[i + 1][j + 1];
+          const p4 = points[i][j + 1];
+          const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
+          const avgHeight = (heights[i][j] + heights[i+1][j] + heights[i+1][j+1] + heights[i][j+1]) / 4;
+          quads.push({ p1, p2, p3, p4, avgZ, avgHeight });
+        }
+      }
+      quads.sort((a, b) => b.avgZ - a.avgZ);
+
+      // Draw filled surface with MUCH brighter gradient
+      for (const quad of quads) {
+        const { p1, p2, p3, p4, avgHeight } = quad;
+
+        // Height-based coloring - higher = brighter teal
+        const normalizedHeight = avgHeight / heightScale;
+        const baseAlpha = 0.25;
+        const heightBoost = normalizedHeight * 0.45;
+        const alpha = baseAlpha + heightBoost;
+
+        // Add slight color variation based on height
+        const r = Math.round(78 + normalizedHeight * 40);
+        const g = Math.round(204 - normalizedHeight * 20);
+        const b = Math.round(163 - normalizedHeight * 30);
+
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Draw BRIGHT wireframe lines
+      ctx.strokeStyle = 'rgba(78, 204, 163, 0.7)';
+      ctx.lineWidth = 1.5;
+
+      // Every other line for cleaner look
+      for (let i = 0; i <= gridSize; i += 2) {
+        ctx.beginPath();
+        for (let j = 0; j <= gridSize; j++) {
+          const p = points[i][j];
+          if (j === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+
+      for (let j = 0; j <= gridSize; j += 2) {
+        ctx.beginPath();
+        for (let i = 0; i <= gridSize; i++) {
+          const p = points[i][j];
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+
+      // Add glow effect on top edge
+      ctx.strokeStyle = 'rgba(78, 204, 163, 0.9)';
+      ctx.lineWidth = 2;
+      const centerI = Math.floor(gridSize / 2);
+      ctx.beginPath();
+      for (let j = 0; j <= gridSize; j++) {
+        const p = points[centerI][j];
+        if (j === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+
+      // Draw floor grid - more visible
+      ctx.strokeStyle = 'rgba(78, 204, 163, 0.2)';
+      ctx.lineWidth = 1;
+
+      const floorY = -0.4;
+      for (let i = 0; i <= gridSize; i += 4) {
+        ctx.beginPath();
+        for (let j = 0; j <= gridSize; j++) {
+          const gx = (i / gridSize - 0.5) * range * 2;
+          const gz = (j / gridSize - 0.5) * range * 2;
+          let p = rotateY(gx, floorY, gz, rotYAngle);
+          p = rotateX(p.x, p.y, p.z, tiltX);
+          const proj = project(p.x, p.y, p.z, cx, cy, size);
+          if (j === 0) ctx.moveTo(proj.x, proj.y);
+          else ctx.lineTo(proj.x, proj.y);
+        }
+        ctx.stroke();
+      }
+
+      for (let j = 0; j <= gridSize; j += 4) {
+        ctx.beginPath();
+        for (let i = 0; i <= gridSize; i++) {
+          const gx = (i / gridSize - 0.5) * range * 2;
+          const gz = (j / gridSize - 0.5) * range * 2;
+          let p = rotateY(gx, floorY, gz, rotYAngle);
+          p = rotateX(p.x, p.y, p.z, tiltX);
+          const proj = project(p.x, p.y, p.z, cx, cy, size);
+          if (i === 0) ctx.moveTo(proj.x, proj.y);
+          else ctx.lineTo(proj.x, proj.y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function animate(timestamp) {
+      time = timestamp || 0;
+      ctx.clearRect(0, 0, width, height);
+
+      // Calculate positions - surfaces pushed to FAR edges, away from content
+      const leftX = width * 0.06;
+      const rightX = width * 0.94;
+
+      // Slow, smooth rotation
+      const rotY1 = time * 0.0003;
+      const rotY2 = time * 0.00025 + Math.PI * 0.7;
+
+      // Subtle breathing effect
+      const breathe = 1 + 0.05 * Math.sin(time * 0.0008);
+
+      // Varying correlation for visual interest
+      const rho = 0.5 * Math.sin(time * 0.0006);
+
+      // Surface sizes - compact and unobtrusive
+      const baseSize = Math.min(width * 0.09, 120);
+      const size1 = baseSize * breathe;
+      const size2 = baseSize * 0.85 * breathe;
+
+      // Draw LEFT surface - upper portion, far left
+      drawSurface(leftX, height * 0.28, size1, rotY1, 0.5, rho, true);
+
+      // Draw RIGHT surface - lower portion, far right
+      drawSurface(rightX, height * 0.62, size2, rotY2, 0.55, -rho * 0.8, false);
+
+      // Draw subtle floating particles on far edges only
+      const numDots = 20;
+      for (let i = 0; i < numDots; i++) {
+        const seed = i * 137.5 + time * 0.00015;
+        const side = i % 2 === 0 ? 0.03 : 0.97;
+        const x = width * side + Math.sin(seed * 2.7) * width * 0.025;
+        const y = (Math.sin(seed * 1.3 + i) * 0.4 + 0.5) * height;
+        const pulse = 0.5 + 0.5 * Math.sin(time * 0.002 + i * 0.5);
+        const radius = 1.5 + pulse * 1.5;
+        const alpha = 0.25 + pulse * 0.2;
+
+        ctx.fillStyle = `rgba(78, 204, 163, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function init() {
+      setupCanvas();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', setupCanvas);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      } else if (!animationId) {
+        animationId = requestAnimationFrame(animate);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

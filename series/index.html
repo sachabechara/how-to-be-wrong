@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Series & Tools - Interactive statistics learning resources. Causal inference, regression, and hands-on visualization tools.">
+  <title>Series & Tools | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: rgba(240, 240, 240, 0.95);
+      --text-secondary: rgba(240, 240, 240, 0.8);
+      --text-muted: rgba(240, 240, 240, 0.6);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Navigation */
+    .top-nav {
+      padding: 2rem;
+    }
+
+    .back-link {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* Main Content */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 2rem 6rem;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .page-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+
+    .page-subtitle {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Section Headers */
+    .section-header {
+      margin-bottom: 2rem;
+    }
+
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    /* Series Cards */
+    .series-section {
+      margin-bottom: 5rem;
+    }
+
+    .series-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 8px;
+      padding: 2.5rem;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .series-card:hover {
+      border-color: rgba(240, 240, 240, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .series-card.muted {
+      opacity: 0.6;
+    }
+
+    .series-card.muted:hover {
+      opacity: 0.7;
+    }
+
+    .series-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .series-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .series-card.muted .series-title {
+      color: var(--text-secondary);
+    }
+
+    .series-subtitle {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .series-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .episode-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      background: rgba(240, 240, 240, 0.05);
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge.active {
+      color: var(--accent);
+      background: rgba(78, 204, 163, 0.1);
+    }
+
+    .series-description {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+
+    .series-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem 1.75rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .series-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .series-btn.disabled {
+      color: var(--text-muted);
+      border-color: rgba(240, 240, 240, 0.2);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* Series Card with Visualization */
+    .series-card.with-viz {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .series-viz {
+      width: 280px;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .series-viz canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .series-card.with-viz .series-card-header {
+      margin-bottom: 0.75rem;
+    }
+
+    .series-card.with-viz .series-description {
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .series-card.with-viz {
+        grid-template-columns: 1fr;
+      }
+
+      .series-viz {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto 1rem;
+      }
+    }
+
+    /* Tools Section */
+    .tools-section {
+      margin-bottom: 5rem;
+    }
+
+    .tool-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 8px;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .tool-card:hover {
+      border-color: rgba(240, 240, 240, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tool-viz {
+      width: 280px;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .tool-viz canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .tool-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tool-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.5rem;
+      color: var(--accent);
+    }
+
+    .tool-subtitle {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-top: -0.5rem;
+    }
+
+    .tool-description {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .tool-note {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .tool-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.6rem 1.25rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s var(--ease-in-out);
+      width: fit-content;
+    }
+
+    .tool-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .tool-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+    }
+
+    .footer-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      html { font-size: 16px; }
+
+      main { padding: 1.5rem 1.5rem 4rem; }
+
+      .page-title { font-size: 2.2rem; }
+
+      .series-card { padding: 1.75rem; }
+
+      .series-title { font-size: 1.6rem; }
+
+      .series-card-header {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .tool-card {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-viz {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 15px; }
+
+      .top-nav { padding: 1.5rem 1rem; }
+
+      main { padding: 1rem 1rem 3rem; }
+
+      .page-title { font-size: 1.9rem; }
+
+      .series-card { padding: 1.25rem; }
+
+      .series-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back
+    </a>
+  </nav>
+
+  <main>
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1 class="page-title">Series & Tools</h1>
+      <p class="page-subtitle">Learn statistics through interactive explorations</p>
+    </header>
+
+    <!-- Causal Inference Series -->
+    <section class="series-section">
+      <div class="section-header">
+        <p class="section-label">Series</p>
+      </div>
+      <div class="series-card with-viz">
+        <div class="series-viz">
+          <canvas id="causalCanvas"></canvas>
+        </div>
+        <div class="series-content">
+          <div class="series-card-header">
+            <div>
+              <h2 class="series-title">Causal Inference</h2>
+              <p class="series-subtitle">From Intuition to Identification</p>
+            </div>
+            <div class="series-meta">
+              <span class="episode-count">17 episodes</span>
+              <span class="status-badge active">In progress</span>
+            </div>
+          </div>
+          <p class="series-description">
+            Does playing hard to get actually work? Why seeing isn't believing. A sequence building the logic of causal claims from first principles.
+          </p>
+          <a href="./causal-inference/index.html" class="series-btn">Explore →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Linear Regression Series -->
+    <section class="series-section">
+      <div class="series-card with-viz muted">
+        <div class="series-viz">
+          <canvas id="regressionCanvas"></canvas>
+        </div>
+        <div class="series-content">
+          <div class="series-card-header">
+            <div>
+              <h2 class="series-title">Linear Regression</h2>
+              <p class="series-subtitle">What a Line Actually Means</p>
+            </div>
+            <div class="series-meta">
+              <span class="episode-count">Forthcoming</span>
+            </div>
+          </div>
+          <p class="series-description">
+            Building regression from the ground up. Why we draw lines, what they capture, what they miss.
+          </p>
+          <span class="series-btn disabled">Coming soon</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section class="tools-section">
+      <div class="section-header">
+        <p class="section-label">Tools & Playgrounds</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-viz">
+          <canvas id="pcaCanvas"></canvas>
+        </div>
+        <div class="tool-content">
+          <h3 class="tool-title">PCA Builder & Visualization</h3>
+          <p class="tool-subtitle">Interactive MATLAB tool for learning Principal Component Analysis</p>
+          <p class="tool-description">
+            Manipulate correlations and watch principal components emerge. Built for developing geometric intuition about variance in multiple dimensions.
+          </p>
+          <p class="tool-note">Requires free MathWorks account</p>
+          <a href="https://matlab.mathworks.com/open/github/v1?repo=sachabechara/pca-visualization-tool&file=pca_builder.m"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="tool-btn">
+            Open Tool
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="footer-brand">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // =====================
+    // Causal Inference Visualization
+    // Randomization breaking confounding
+    // =====================
+
+    (function() {
+      const canvas = document.getElementById('causalCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      function setupCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.scale(dpr, dpr);
+        width = rect.width;
+        height = rect.height;
+      }
+
+      // Seeded random
+      let seed = 123;
+      function seededRandom() {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+      }
+
+      // Dots representing individuals
+      const numDots = 30;
+      const dots = [];
+
+      function initDots() {
+        seed = 123;
+        dots.length = 0;
+        for (let i = 0; i < numDots; i++) {
+          // Each dot has an inherent "size" (confounder)
+          const inherentSize = 0.3 + seededRandom() * 0.7;
+          dots.push({
+            id: i,
+            inherentSize: inherentSize,
+            group: i < numDots / 2 ? 'treatment' : 'control',
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            currentSize: inherentSize,
+            targetSize: inherentSize
+          });
+        }
+        // Initially confounded: larger dots tend to be in treatment
+        dots.sort((a, b) => b.inherentSize - a.inherentSize);
+        dots.forEach((dot, i) => {
+          dot.group = i < numDots / 2 ? 'treatment' : 'control';
+        });
+        positionDots(false);
+      }
+
+      function positionDots(randomized) {
+        const groupWidth = width * 0.35;
+        const treatmentX = width * 0.25;
+        const controlX = width * 0.75;
+        const centerY = height * 0.5;
+        const spreadY = height * 0.35;
+
+        seed = 456;
+        dots.forEach(dot => {
+          const baseX = dot.group === 'treatment' ? treatmentX : controlX;
+          const offsetX = (seededRandom() - 0.5) * groupWidth * 0.7;
+          const offsetY = (seededRandom() - 0.5) * spreadY * 2;
+
+          dot.targetX = baseX + offsetX;
+          dot.targetY = centerY + offsetY;
+
+          // When randomized, all dots show similar sizes
+          // When confounded, treatment shows larger, control shows smaller
+          if (randomized) {
+            dot.targetSize = 0.5 + seededRandom() * 0.2;
+          } else {
+            if (dot.group === 'treatment') {
+              dot.targetSize = dot.inherentSize * 0.9 + 0.1;
+            } else {
+              dot.targetSize = dot.inherentSize * 0.5 + 0.1;
+            }
+          }
+        });
+      }
+
+      // Animation state
+      let animationId;
+      let phase = 'confounded'; // confounded -> shuffling -> randomized -> drifting -> confounded
+      let phaseTime = 0;
+      const phaseDurations = {
+        confounded: 3000,
+        shuffling: 1500,
+        randomized: 3000,
+        drifting: 1500
+      };
+
+      function shuffle() {
+        // Randomly reassign groups
+        const shuffled = [...dots];
+        seed = Date.now() % 10000;
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(seededRandom() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        shuffled.forEach((dot, i) => {
+          dot.group = i < numDots / 2 ? 'treatment' : 'control';
+        });
+        positionDots(true);
+      }
+
+      function returnToConfounded() {
+        // Sort by inherent size again
+        dots.sort((a, b) => b.inherentSize - a.inherentSize);
+        dots.forEach((dot, i) => {
+          dot.group = i < numDots / 2 ? 'treatment' : 'control';
+        });
+        positionDots(false);
+      }
+
+      let lastTime = 0;
+      function draw(timestamp) {
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw group labels
+        ctx.font = '11px "IBM Plex Mono", monospace';
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.4)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Treatment', width * 0.25, height * 0.1);
+        ctx.fillText('Control', width * 0.75, height * 0.1);
+
+        // Draw dividing line
+        ctx.strokeStyle = 'rgba(240, 240, 240, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(width / 2, height * 0.15);
+        ctx.lineTo(width / 2, height * 0.9);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Update phase
+        phaseTime += deltaTime;
+        if (phaseTime > phaseDurations[phase]) {
+          phaseTime = 0;
+          if (phase === 'confounded') {
+            phase = 'shuffling';
+            shuffle();
+          } else if (phase === 'shuffling') {
+            phase = 'randomized';
+          } else if (phase === 'randomized') {
+            phase = 'drifting';
+            returnToConfounded();
+          } else if (phase === 'drifting') {
+            phase = 'confounded';
+          }
+        }
+
+        // Animate dots
+        const easeSpeed = phase === 'shuffling' || phase === 'drifting' ? 0.06 : 0.02;
+        dots.forEach(dot => {
+          dot.x += (dot.targetX - dot.x) * easeSpeed;
+          dot.y += (dot.targetY - dot.y) * easeSpeed;
+          dot.currentSize += (dot.targetSize - dot.currentSize) * easeSpeed;
+        });
+
+        // Draw dots
+        dots.forEach(dot => {
+          const radius = 3 + dot.currentSize * 6;
+          const alpha = 0.4 + dot.currentSize * 0.4;
+
+          const color = dot.group === 'treatment'
+            ? `rgba(78, 204, 163, ${alpha})`
+            : `rgba(231, 76, 60, ${alpha})`;
+
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        });
+
+        // Draw phase indicator
+        ctx.font = '9px "IBM Plex Mono", monospace';
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.3)';
+        ctx.textAlign = 'center';
+        const label = phase === 'confounded' || phase === 'drifting' ? 'Confounded' : 'Randomized';
+        ctx.fillText(label, width / 2, height * 0.95);
+
+        animationId = requestAnimationFrame(draw);
+      }
+
+      function init() {
+        setupCanvas();
+        initDots();
+        dots.forEach(dot => {
+          dot.x = dot.targetX;
+          dot.y = dot.targetY;
+        });
+        lastTime = performance.now();
+        draw(lastTime);
+      }
+
+      // Visibility observer
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!animationId) init();
+          } else {
+            if (animationId) {
+              cancelAnimationFrame(animationId);
+              animationId = null;
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      observer.observe(canvas.parentElement);
+
+      window.addEventListener('resize', () => {
+        if (animationId) {
+          setupCanvas();
+          positionDots(phase === 'randomized' || phase === 'shuffling');
+        }
+      });
+    })();
+
+    // =====================
+    // Linear Regression Visualization
+    // Line fitting to data
+    // =====================
+
+    (function() {
+      const canvas = document.getElementById('regressionCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      function setupCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.scale(dpr, dpr);
+        width = rect.width;
+        height = rect.height;
+      }
+
+      // Seeded random
+      let seed = 789;
+      function seededRandom() {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+      }
+
+      function boxMuller() {
+        const u1 = seededRandom() || 0.001;
+        const u2 = seededRandom();
+        return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      }
+
+      // Data points
+      const numPoints = 25;
+      const points = [];
+      let trueSlope = 0.6;
+      let trueIntercept = 0.2;
+
+      // Current line parameters (animated)
+      let currentSlope = 0;
+      let currentIntercept = 0.5;
+      let targetSlope = 0;
+      let targetIntercept = 0.5;
+
+      function generatePoints() {
+        seed = Math.floor(seededRandom() * 10000);
+        points.length = 0;
+
+        // Random true parameters
+        trueSlope = 0.4 + seededRandom() * 0.4;
+        trueIntercept = 0.1 + seededRandom() * 0.3;
+
+        for (let i = 0; i < numPoints; i++) {
+          const x = 0.1 + seededRandom() * 0.8;
+          const noise = boxMuller() * 0.1;
+          const y = trueIntercept + trueSlope * x + noise;
+          points.push({
+            x,
+            y: Math.max(0.05, Math.min(0.95, y)),
+            targetX: x,
+            targetY: Math.max(0.05, Math.min(0.95, y))
+          });
+        }
+
+        // Calculate best fit line
+        calculateBestFit();
+      }
+
+      function calculateBestFit() {
+        // Simple least squares
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        points.forEach(p => {
+          sumX += p.targetX;
+          sumY += p.targetY;
+          sumXY += p.targetX * p.targetY;
+          sumXX += p.targetX * p.targetX;
+        });
+        const n = points.length;
+        targetSlope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        targetIntercept = (sumY - targetSlope * sumX) / n;
+      }
+
+      // Animation state
+      let animationId;
+      let phase = 'fitting'; // fitting -> holding -> shifting -> fitting
+      let phaseTime = 0;
+      const phaseDurations = {
+        fitting: 2000,
+        holding: 2500,
+        shifting: 1500
+      };
+
+      function shiftPoints() {
+        seed = Date.now() % 10000;
+        points.forEach(p => {
+          const newX = 0.1 + seededRandom() * 0.8;
+          const noise = boxMuller() * 0.1;
+          const newY = trueIntercept + trueSlope * newX + noise;
+          p.targetX = newX;
+          p.targetY = Math.max(0.05, Math.min(0.95, newY));
+        });
+        calculateBestFit();
+      }
+
+      function toCanvasX(x) { return width * 0.1 + x * width * 0.8; }
+      function toCanvasY(y) { return height * 0.9 - y * height * 0.8; }
+
+      let lastTime = 0;
+      function draw(timestamp) {
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw subtle axes
+        ctx.strokeStyle = 'rgba(240, 240, 240, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(0), toCanvasY(0));
+        ctx.lineTo(toCanvasX(1), toCanvasY(0));
+        ctx.moveTo(toCanvasX(0), toCanvasY(0));
+        ctx.lineTo(toCanvasX(0), toCanvasY(1));
+        ctx.stroke();
+
+        // Update phase
+        phaseTime += deltaTime;
+        if (phaseTime > phaseDurations[phase]) {
+          phaseTime = 0;
+          if (phase === 'fitting') {
+            phase = 'holding';
+          } else if (phase === 'holding') {
+            phase = 'shifting';
+            shiftPoints();
+          } else if (phase === 'shifting') {
+            phase = 'fitting';
+          }
+        }
+
+        // Animate points
+        const pointSpeed = phase === 'shifting' ? 0.04 : 0.02;
+        points.forEach(p => {
+          p.x += (p.targetX - p.x) * pointSpeed;
+          p.y += (p.targetY - p.y) * pointSpeed;
+        });
+
+        // Animate line
+        const lineSpeed = phase === 'fitting' ? 0.03 : 0.05;
+        currentSlope += (targetSlope - currentSlope) * lineSpeed;
+        currentIntercept += (targetIntercept - currentIntercept) * lineSpeed;
+
+        // Draw regression line
+        const lineY0 = currentIntercept;
+        const lineY1 = currentIntercept + currentSlope;
+
+        ctx.strokeStyle = 'rgba(78, 204, 163, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(0), toCanvasY(lineY0));
+        ctx.lineTo(toCanvasX(1), toCanvasY(lineY1));
+        ctx.stroke();
+
+        // Draw residual lines (subtle)
+        if (phase === 'holding' || phase === 'fitting') {
+          ctx.strokeStyle = 'rgba(240, 240, 240, 0.1)';
+          ctx.lineWidth = 1;
+          points.forEach(p => {
+            const predictedY = currentIntercept + currentSlope * p.x;
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(p.x), toCanvasY(p.y));
+            ctx.lineTo(toCanvasX(p.x), toCanvasY(predictedY));
+            ctx.stroke();
+          });
+        }
+
+        // Draw points
+        points.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(toCanvasX(p.x), toCanvasY(p.y), 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(240, 240, 240, 0.7)';
+          ctx.fill();
+        });
+
+        animationId = requestAnimationFrame(draw);
+      }
+
+      function init() {
+        setupCanvas();
+        generatePoints();
+        // Start with line at origin
+        currentSlope = 0;
+        currentIntercept = 0.5;
+        points.forEach(p => {
+          p.x = p.targetX;
+          p.y = p.targetY;
+        });
+        lastTime = performance.now();
+        draw(lastTime);
+      }
+
+      // Visibility observer
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!animationId) init();
+          } else {
+            if (animationId) {
+              cancelAnimationFrame(animationId);
+              animationId = null;
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      observer.observe(canvas.parentElement);
+
+      window.addEventListener('resize', () => {
+        if (animationId) {
+          setupCanvas();
+        }
+      });
+    })();
+
+    // =====================
+    // MATLAB-style 3D PCA Visualization
+    // =====================
+
+    const canvas = document.getElementById('pcaCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // High DPI support
+    let canvasWidth, canvasHeight;
+    function setupCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      ctx.scale(dpr, dpr);
+      canvasWidth = rect.width;
+      canvasHeight = rect.height;
+    }
+
+    // Seeded random for reproducible points
+    let seed = 42;
+    function seededRandom() {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // Generate correlated 3D ellipsoid points
+    const points = [];
+    const numPoints = 50;
+
+    function generatePoints() {
+      seed = 42;
+      points.length = 0;
+
+      for (let i = 0; i < numPoints; i++) {
+        const u1 = seededRandom();
+        const u2 = seededRandom();
+        const u3 = seededRandom();
+        const u4 = seededRandom();
+
+        // Box-Muller for normal distribution
+        const z1 = Math.sqrt(-2 * Math.log(u1 || 0.001)) * Math.cos(2 * Math.PI * u2);
+        const z2 = Math.sqrt(-2 * Math.log(u1 || 0.001)) * Math.sin(2 * Math.PI * u2);
+        const z3 = Math.sqrt(-2 * Math.log(u3 || 0.001)) * Math.cos(2 * Math.PI * u4);
+
+        // Create elongated ellipsoid (principal axis along diagonal)
+        const x = z1 * 0.9 + z2 * 0.15;
+        const y = z1 * 0.7 + z2 * 0.25 + z3 * 0.15;
+        const z = z1 * 0.5 + z3 * 0.2;
+
+        points.push({ x, y, z });
+      }
+    }
+
+    // 3D rotation matrices
+    function rotateY(point, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: point.x * cos - point.z * sin,
+        y: point.y,
+        z: point.x * sin + point.z * cos
+      };
+    }
+
+    function rotateX(point, angle) {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: point.x,
+        y: point.y * cos - point.z * sin,
+        z: point.y * sin + point.z * cos
+      };
+    }
+
+    // Project 3D to 2D with orthographic-like projection
+    const scale = 28;
+    const offsetY = 10;
+    function project(point) {
+      const fov = 250;
+      const distance = 6;
+      const perspScale = fov / (distance + point.z * 0.3);
+      return {
+        x: canvasWidth / 2 + point.x * perspScale * (scale / 28),
+        y: canvasHeight / 2 - point.y * perspScale * (scale / 28) + offsetY,
+        z: point.z,
+        perspScale: perspScale
+      };
+    }
+
+    // Animation state
+    let angleY = 0.4;
+    const angleX = 0.45; // Fixed tilt for MATLAB-style view
+    let animationId;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      const axisLength = 2.2;
+      const gridSize = 2;
+      const gridSteps = 4;
+
+      // Transform helper
+      function transform(p) {
+        let rotated = rotateY(p, angleY);
+        rotated = rotateX(rotated, angleX);
+        return project(rotated);
+      }
+
+      // Draw grid on the floor (Y = -1.5 plane)
+      const floorY = -1.5;
+      ctx.strokeStyle = 'rgba(240, 240, 240, 0.08)';
+      ctx.lineWidth = 0.5;
+
+      // Grid lines parallel to X axis
+      for (let i = -gridSteps; i <= gridSteps; i++) {
+        const z = (i / gridSteps) * gridSize;
+        const start = transform({ x: -gridSize, y: floorY, z: z });
+        const end = transform({ x: gridSize, y: floorY, z: z });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+
+      // Grid lines parallel to Z axis
+      for (let i = -gridSteps; i <= gridSteps; i++) {
+        const x = (i / gridSteps) * gridSize;
+        const start = transform({ x: x, y: floorY, z: -gridSize });
+        const end = transform({ x: x, y: floorY, z: gridSize });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+
+      // Draw coordinate axes
+      const axes = [
+        { start: { x: 0, y: 0, z: 0 }, end: { x: axisLength, y: 0, z: 0 }, label: 'X' },
+        { start: { x: 0, y: 0, z: 0 }, end: { x: 0, y: axisLength, z: 0 }, label: 'Y' },
+        { start: { x: 0, y: 0, z: 0 }, end: { x: 0, y: 0, z: axisLength }, label: 'Z' }
+      ];
+
+      ctx.strokeStyle = 'rgba(240, 240, 240, 0.25)';
+      ctx.lineWidth = 1;
+
+      axes.forEach(axis => {
+        const startProj = transform(axis.start);
+        const endProj = transform(axis.end);
+
+        // Draw axis line
+        ctx.beginPath();
+        ctx.moveTo(startProj.x, startProj.y);
+        ctx.lineTo(endProj.x, endProj.y);
+        ctx.stroke();
+
+        // Draw axis label
+        const labelOffset = 0.3;
+        const labelPoint = {
+          x: axis.end.x + (axis.end.x > 0 ? labelOffset : 0),
+          y: axis.end.y + (axis.end.y > 0 ? labelOffset : 0),
+          z: axis.end.z + (axis.end.z > 0 ? labelOffset : 0)
+        };
+        const labelProj = transform(labelPoint);
+
+        ctx.font = '10px "IBM Plex Mono", monospace';
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.5)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(axis.label, labelProj.x, labelProj.y);
+      });
+
+      // Transform and sort points by z for proper depth ordering
+      const transformedPoints = points.map(p => {
+        let rotated = rotateY(p, angleY);
+        rotated = rotateX(rotated, angleX);
+        const projected = project(rotated);
+        return { ...projected, original: p };
+      });
+
+      transformedPoints.sort((a, b) => a.z - b.z);
+
+      // Draw points
+      transformedPoints.forEach(p => {
+        // Depth-based opacity (further = more transparent)
+        const depthNorm = (p.z + 3) / 6;
+        const alpha = 0.35 + depthNorm * 0.45;
+        const radius = 2 + depthNorm * 0.8;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(78, 204, 163, ${Math.min(0.85, alpha)})`;
+        ctx.fill();
+      });
+
+      // Slow continuous rotation
+      angleY += 0.004;
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    // Initialize
+    function init() {
+      setupCanvas();
+      generatePoints();
+      draw();
+    }
+
+    // Handle resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        setupCanvas();
+      }, 200);
+    });
+
+    // Start animation when visible
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          if (!animationId) init();
+        } else {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    observer.observe(canvas.parentElement);
+
+    // Initial load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

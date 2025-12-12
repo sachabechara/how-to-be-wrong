@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The Two Worlds Problem - Understanding potential outcomes and why individual causal effects are impossible to observe. Part of the Causal Inference series.">
+  <title>The Two Worlds Problem | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scroll Progress Indicator */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* Site Navigation */
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-brand:hover {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      position: fixed;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      z-index: 50;
+    }
+
+    .toc-toggle {
+      display: none;
+    }
+
+    .toc {
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-width: 200px;
+    }
+
+    .toc-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc-list a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: block;
+      padding-left: 0.75rem;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    /* Main Content */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    /* Episode Header */
+    .episode-header {
+      margin-bottom: 4rem;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s backwards;
+    }
+
+    .episode-series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-series-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Article Content */
+    article {
+      color: var(--text-secondary);
+      animation: fadeIn 0.6s var(--ease-in-out) 0.2s backwards;
+    }
+
+    article p {
+      margin-bottom: 1.5rem;
+    }
+
+    article section {
+      margin-bottom: 3rem;
+    }
+
+    article h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    article h3 {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    article em {
+      font-style: italic;
+    }
+
+    /* Visualization Container */
+    .viz-container {
+      margin: 3rem -2rem;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    /* Code/Labels */
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* Visualization Caption */
+    .viz-caption {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .viz-caption-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Two Worlds Branching Diagram */
+    .two-worlds-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+
+    .two-worlds-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .two-worlds-viz .node-box {
+      fill: var(--bg);
+      stroke-width: 2;
+      transition: all 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .node-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      transition: fill 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .branch-line {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      transition: all 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .branch-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      transition: fill 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .world-box {
+      fill: var(--bg);
+      stroke-width: 2;
+      rx: 4;
+      transition: all 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .question-mark {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 300;
+      font-style: italic;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      transition: fill 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .fade-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      opacity: 0;
+      transition: opacity 0.6s var(--ease-in-out);
+    }
+
+    .two-worlds-viz .fade-label.visible {
+      opacity: 1;
+    }
+
+    /* Table of Unknowns */
+    .unknowns-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+
+    .unknowns-table th,
+    .unknowns-table td {
+      padding: 0.75rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(240, 240, 240, 0.1);
+    }
+
+    .unknowns-table th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .unknowns-table td {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .unknowns-table .person-name {
+      color: var(--text-secondary);
+      text-align: left;
+    }
+
+    .unknowns-table .observed {
+      color: var(--text-primary);
+    }
+
+    .unknowns-table .unknown {
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    .unknowns-table .effect-unknown {
+      color: var(--warning);
+      opacity: 0.6;
+    }
+
+    /* Group Comparison Visualization */
+    .group-comparison-viz {
+      width: 100%;
+      min-height: 350px;
+      position: relative;
+    }
+
+    .group-comparison-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .groups-container {
+      display: flex;
+      justify-content: space-around;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .group-panel {
+      flex: 1;
+      text-align: center;
+    }
+
+    .group-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .dots-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      min-height: 100px;
+    }
+
+    .person-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s var(--ease-in-out), transform 0.3s var(--ease-in-out);
+    }
+
+    .person-dot.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .person-dot .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .person-dot .outcome {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .group-average {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out);
+    }
+
+    .group-average.visible {
+      opacity: 1;
+    }
+
+    .effect-result {
+      text-align: center;
+      padding: 1.5rem;
+      background: rgba(78, 204, 163, 0.05);
+      border: 1px solid rgba(78, 204, 163, 0.2);
+      border-radius: 4px;
+      margin-top: 1rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s var(--ease-in-out), transform 0.5s var(--ease-in-out);
+    }
+
+    .effect-result.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .effect-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .effect-value {
+      font-family: 'Fraunces', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    /* Episode Navigation */
+    .episode-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.3s backwards;
+    }
+
+    .episode-nav-link {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      max-width: 45%;
+      padding: 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .episode-nav-link--prev {
+      align-items: flex-start;
+    }
+
+    .episode-nav-link--next {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .episode-nav-direction {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-nav-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover .episode-nav-title {
+      color: var(--text-primary);
+    }
+
+    .episode-nav-link--disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .toc-container {
+        position: fixed;
+        top: auto;
+        bottom: 2rem;
+        right: 2rem;
+        transform: none;
+      }
+
+      .toc-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: var(--bg);
+        border: 1px solid rgba(240, 240, 240, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .toc-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-secondary);
+        transition: stroke 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover svg {
+        stroke: var(--accent);
+      }
+
+      .toc {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-container.open .toc {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+
+      .site-nav {
+        padding: 1rem;
+      }
+
+      .nav-brand {
+        font-size: 0.9rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      main {
+        padding: 6rem 1.5rem 3rem;
+      }
+
+      .episode-title {
+        font-size: 2.2rem;
+      }
+
+      .episode-series-name {
+        font-size: 1rem;
+      }
+
+      .episode-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .viz-container {
+        margin: 2rem -1.5rem;
+        padding: 1.5rem;
+      }
+
+      .episode-nav {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .episode-nav-link {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .episode-nav-link--next {
+        margin-left: 0;
+      }
+
+      .toc-container {
+        bottom: 1rem;
+        right: 1rem;
+      }
+
+      footer {
+        padding: 2rem 1.5rem 3rem;
+      }
+
+      .groups-container {
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .unknowns-table th,
+      .unknowns-table td {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+
+      main {
+        padding: 5rem 1rem 2rem;
+      }
+
+      .episode-title {
+        font-size: 1.9rem;
+      }
+
+      .viz-container {
+        margin: 1.5rem -1rem;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Site Navigation -->
+  <nav class="site-nav">
+    <a href="../../index.html" class="nav-brand">Statistics: How to Be Wrong (Less Often)</a>
+    <ul class="nav-links">
+      <li><a href="../index.html">series</a></li>
+      <li><a href="../../resources/index.html">resources</a></li>
+      <li><a href="../../about/index.html">about</a></li>
+    </ul>
+  </nav>
+
+  <!-- Table of Contents -->
+  <aside class="toc-container" id="tocContainer">
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="15" y2="12"></line>
+        <line x1="3" y1="18" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <nav class="toc">
+      <p class="toc-title">In this episode</p>
+      <ul class="toc-list">
+        <li><a href="#the-setup">The Setup</a></li>
+        <li><a href="#naming-the-unknowable">Naming the Unknowable</a></li>
+        <li><a href="#how-experiments-help">How Experiments Help</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <header class="episode-header">
+      <p class="episode-series-label">Series</p>
+      <p class="episode-series-name">Causal Inference</p>
+      <p class="episode-number">Episode 01</p>
+      <h1 class="episode-title">The Two Worlds Problem</h1>
+      <p class="episode-subtitle">Why individual causal effects are impossible to observe</p>
+    </header>
+
+    <article>
+      <section id="the-setup">
+        <h2>The Setup</h2>
+
+        <p>You're texting someone new. Things seem promising. They send a message. You see it.</p>
+
+        <p>Now you have a choice. Reply right away — you're excited, why hide it? Or wait a few hours — keep some mystery, don't seem too eager.</p>
+
+        <p>You pick one. Time passes. Things unfold however they unfold.</p>
+
+        <p>Here's what you'll never know: what would have happened if you'd chosen differently.</p>
+
+        <!-- Two Worlds Branching Diagram -->
+        <div class="viz-container">
+          <div class="two-worlds-viz" id="twoWorldsViz">
+            <svg id="twoWorldsSvg" aria-label="Branching diagram showing two possible worlds based on choice"></svg>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">One path is taken. The other vanishes.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="naming-the-unknowable">
+        <h2>Naming the Unknowable</h2>
+
+        <p>Statisticians have notation for this. For any person, we write:</p>
+
+        <p><code>Y(1)</code> = the outcome if they receive the treatment<br>
+        <code>Y(0)</code> = the outcome if they don't</p>
+
+        <p>The causal effect for that person is the difference: <code>Y(1) − Y(0)</code>.</p>
+
+        <p>Simple. Except for one problem: you can never observe both. If you reply now, you see Y(reply now). The other world — Y(wait) — is gone forever. It doesn't exist. You can't compare what happened to what would have happened, because "what would have happened" isn't available.</p>
+
+        <p>This is called the <em>fundamental problem of causal inference</em>. Not a statistical problem. Not a data limitation. A fact about reality.</p>
+
+        <!-- Table of Unknowns -->
+        <div class="viz-container">
+          <table class="unknowns-table">
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Y(reply now)</th>
+                <th>Y(wait)</th>
+                <th>Causal Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="person-name">You</td>
+                <td class="observed">👎</td>
+                <td class="unknown">?</td>
+                <td class="effect-unknown">?</td>
+              </tr>
+              <tr>
+                <td class="person-name">Alex</td>
+                <td class="unknown">?</td>
+                <td class="observed">💬</td>
+                <td class="effect-unknown">?</td>
+              </tr>
+              <tr>
+                <td class="person-name">Jordan</td>
+                <td class="observed">👍</td>
+                <td class="unknown">?</td>
+                <td class="effect-unknown">?</td>
+              </tr>
+              <tr>
+                <td class="person-name">Sam</td>
+                <td class="unknown">?</td>
+                <td class="observed">👎</td>
+                <td class="effect-unknown">?</td>
+              </tr>
+              <tr>
+                <td class="person-name">Riley</td>
+                <td class="observed">💬</td>
+                <td class="unknown">?</td>
+                <td class="effect-unknown">?</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="viz-caption">
+            <span class="viz-caption-text">Each person reveals one outcome. The other stays hidden. The effect is never directly observed.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-experiments-help">
+        <h2>So How Do Experiments Help?</h2>
+
+        <p>If we can never see individual effects, what's the point of experiments?</p>
+
+        <p>The trick: we give up on individuals. Instead, we compare groups.</p>
+
+        <p>Take 100 people in similar situations. Randomly assign 50 to reply immediately, 50 to wait. We can't know what would have happened to any single person. But we can compare the average outcome in each group.</p>
+
+        <p>If the groups were randomly assigned, they're similar on average — similar confidence, similar attractiveness, similar situations. The only systematic difference is the strategy. So the difference in average outcomes estimates the average causal effect.</p>
+
+        <p>We trade individual certainty for group-level knowledge.</p>
+
+        <!-- Group Comparison Visualization -->
+        <div class="viz-container">
+          <div class="group-comparison-viz" id="groupComparisonViz">
+            <div class="groups-container">
+              <div class="group-panel" id="replyNowGroup">
+                <div class="group-title">Reply Now</div>
+                <div class="dots-container" id="replyNowDots"></div>
+                <div class="group-average" id="replyNowAvg">Average success rate: 45%</div>
+              </div>
+              <div class="group-panel" id="waitGroup">
+                <div class="group-title">Wait</div>
+                <div class="dots-container" id="waitDots"></div>
+                <div class="group-average" id="waitAvg">Average success rate: 52%</div>
+              </div>
+            </div>
+            <div class="effect-result" id="effectResult">
+              <div class="effect-label">Estimated Average Effect</div>
+              <div class="effect-value">+7 percentage points</div>
+            </div>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">No individual effect is observed. But the average difference tells us something.</span>
+          </div>
+        </div>
+      </section>
+    </article>
+
+    <!-- Episode Navigation -->
+    <nav class="episode-nav">
+      <a href="00-the-causal-problem.html" class="episode-nav-link episode-nav-link--prev">
+        <span class="episode-nav-direction">Previous</span>
+        <span class="episode-nav-title">Why Seeing Isn't Believing</span>
+      </a>
+      <a href="00-75-assumptions.html" class="episode-nav-link episode-nav-link--next">
+        <span class="episode-nav-direction">Next</span>
+        <span class="episode-nav-title">What Has to Be True</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>
+    <p class="footer-text">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // Scroll Progress Indicator
+    const scrollProgress = document.getElementById('scrollProgress');
+
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      scrollProgress.style.width = scrollPercent + '%';
+    }
+
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    updateScrollProgress();
+
+    // Table of Contents Toggle (for mobile/tablet)
+    const tocContainer = document.getElementById('tocContainer');
+    const tocToggle = document.getElementById('tocToggle');
+
+    tocToggle.addEventListener('click', () => {
+      tocContainer.classList.toggle('open');
+    });
+
+    // Close TOC when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!tocContainer.contains(e.target)) {
+        tocContainer.classList.remove('open');
+      }
+    });
+
+    // Active section highlighting in TOC
+    const sections = document.querySelectorAll('article section[id]');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 150;
+
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          tocLinks.forEach((link) => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + sectionId) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', highlightActiveSection, { passive: true });
+    highlightActiveSection();
+
+    // Smooth scroll for TOC links
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+          tocContainer.classList.remove('open');
+        }
+      });
+    });
+
+    // Seeded random number generator
+    function seededRandom(seed) {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // =====================
+    // Two Worlds Branching Diagram
+    // =====================
+
+    function createTwoWorldsViz() {
+      const svg = document.getElementById('twoWorldsSvg');
+      const container = document.getElementById('twoWorldsViz');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Layout
+      const centerX = width / 2;
+      const startY = height * 0.12;
+      const branchY = height * 0.35;
+      const worldY = height * 0.75;
+      const leftX = width * 0.25;
+      const rightX = width * 0.75;
+
+      // Colors
+      const accentColor = '#4ecca3';
+      const mutedColor = 'rgba(240, 240, 240, 0.5)';
+      const textColor = 'rgba(240, 240, 240, 0.92)';
+
+      // Randomly choose which path is "taken"
+      const chosenPath = seededRandom(42) > 0.5 ? 'left' : 'right';
+
+      let svgContent = `
+        <!-- Start node -->
+        <rect class="node-box" x="${centerX - 90}" y="${startY - 18}" width="180" height="36" rx="4" stroke="${textColor}" />
+        <text class="node-label" x="${centerX}" y="${startY}" fill="${textColor}">You see the message</text>
+
+        <!-- Left branch line -->
+        <path class="branch-line" id="leftBranch"
+          d="M ${centerX} ${startY + 18} Q ${centerX} ${branchY - 20} ${leftX} ${branchY}"
+          stroke="${chosenPath === 'left' ? accentColor : mutedColor}" />
+
+        <!-- Right branch line -->
+        <path class="branch-line" id="rightBranch"
+          d="M ${centerX} ${startY + 18} Q ${centerX} ${branchY - 20} ${rightX} ${branchY}"
+          stroke="${chosenPath === 'right' ? accentColor : mutedColor}" />
+
+        <!-- Left choice label -->
+        <text class="branch-label" x="${leftX}" y="${branchY + 5}" text-anchor="middle"
+          fill="${chosenPath === 'left' ? accentColor : mutedColor}">Reply now</text>
+
+        <!-- Right choice label -->
+        <text class="branch-label" x="${rightX}" y="${branchY + 5}" text-anchor="middle"
+          fill="${chosenPath === 'right' ? accentColor : mutedColor}">Wait 3 hours</text>
+
+        <!-- Left to World A line -->
+        <line class="branch-line" x1="${leftX}" y1="${branchY + 15}" x2="${leftX}" y2="${worldY - 35}"
+          stroke="${chosenPath === 'left' ? accentColor : mutedColor}" />
+
+        <!-- Right to World B line -->
+        <line class="branch-line" x1="${rightX}" y1="${branchY + 15}" x2="${rightX}" y2="${worldY - 35}"
+          stroke="${chosenPath === 'right' ? accentColor : mutedColor}" />
+
+        <!-- World A box -->
+        <rect class="world-box" id="worldA" x="${leftX - 50}" y="${worldY - 35}" width="100" height="70"
+          stroke="${chosenPath === 'left' ? accentColor : mutedColor}" />
+        <text class="node-label" x="${leftX}" y="${worldY - 15}" fill="${chosenPath === 'left' ? textColor : mutedColor}" font-size="10">World A</text>
+        <text class="question-mark" x="${leftX}" y="${worldY + 15}" fill="${chosenPath === 'left' ? accentColor : mutedColor}">?</text>
+
+        <!-- World B box -->
+        <rect class="world-box" id="worldB" x="${rightX - 50}" y="${worldY - 35}" width="100" height="70"
+          stroke="${chosenPath === 'right' ? accentColor : mutedColor}" />
+        <text class="node-label" x="${rightX}" y="${worldY - 15}" fill="${chosenPath === 'right' ? textColor : mutedColor}" font-size="10">World B</text>
+        <text class="question-mark" x="${rightX}" y="${worldY + 15}" fill="${chosenPath === 'right' ? accentColor : mutedColor}">?</text>
+
+        <!-- Never observed labels -->
+        <text class="fade-label" id="leftFadeLabel" x="${leftX}" y="${worldY + 55}" fill="${mutedColor}">
+          ${chosenPath === 'left' ? '' : 'Never observed'}
+        </text>
+        <text class="fade-label" id="rightFadeLabel" x="${rightX}" y="${worldY + 55}" fill="${mutedColor}">
+          ${chosenPath === 'right' ? '' : 'Never observed'}
+        </text>
+      `;
+
+      svg.innerHTML = svgContent;
+
+      // Animate on scroll
+      let animated = false;
+
+      function animateBranching() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.7 && containerRect.bottom > 0) {
+          animated = true;
+
+          // Show fade labels after delay
+          setTimeout(() => {
+            const leftLabel = document.getElementById('leftFadeLabel');
+            const rightLabel = document.getElementById('rightFadeLabel');
+            if (leftLabel) leftLabel.classList.add('visible');
+            if (rightLabel) rightLabel.classList.add('visible');
+          }, 1000);
+        }
+      }
+
+      window.addEventListener('scroll', animateBranching, { passive: true });
+      animateBranching();
+    }
+
+    // Initialize two worlds viz
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createTwoWorldsViz);
+    } else {
+      createTwoWorldsViz();
+    }
+
+    // =====================
+    // Group Comparison Visualization
+    // =====================
+
+    function createGroupComparisonViz() {
+      const replyNowDots = document.getElementById('replyNowDots');
+      const waitDots = document.getElementById('waitDots');
+      const replyNowAvg = document.getElementById('replyNowAvg');
+      const waitAvg = document.getElementById('waitAvg');
+      const effectResult = document.getElementById('effectResult');
+      const container = document.getElementById('groupComparisonViz');
+
+      if (!replyNowDots || !waitDots || !container) return;
+
+      // Generate outcomes for each group
+      const replyNowOutcomes = [];
+      const waitOutcomes = [];
+
+      // Reply now group: 45% success rate (lower)
+      for (let i = 0; i < 15; i++) {
+        const success = seededRandom(100 + i) < 0.45;
+        replyNowOutcomes.push(success);
+      }
+
+      // Wait group: 52% success rate (higher)
+      for (let i = 0; i < 15; i++) {
+        const success = seededRandom(200 + i) < 0.52;
+        waitOutcomes.push(success);
+      }
+
+      // Create dots for reply now group
+      replyNowOutcomes.forEach((success, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'person-dot';
+        dot.innerHTML = `
+          <span class="outcome">${success ? '👍' : '👎'}</span>
+          <span class="dot" style="background: ${success ? '#4ecca3' : '#e74c3c'}"></span>
+        `;
+        dot.dataset.index = i;
+        replyNowDots.appendChild(dot);
+      });
+
+      // Create dots for wait group
+      waitOutcomes.forEach((success, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'person-dot';
+        dot.innerHTML = `
+          <span class="outcome">${success ? '👍' : '👎'}</span>
+          <span class="dot" style="background: ${success ? '#4ecca3' : '#e74c3c'}"></span>
+        `;
+        dot.dataset.index = i;
+        waitDots.appendChild(dot);
+      });
+
+      // Animate on scroll
+      let animated = false;
+
+      function animateGroups() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.7 && containerRect.bottom > 0) {
+          animated = true;
+
+          // Animate dots appearing
+          const allDots = container.querySelectorAll('.person-dot');
+          allDots.forEach((dot, i) => {
+            setTimeout(() => {
+              dot.classList.add('visible');
+            }, i * 50);
+          });
+
+          // Show averages after dots
+          setTimeout(() => {
+            replyNowAvg.classList.add('visible');
+            waitAvg.classList.add('visible');
+          }, allDots.length * 50 + 500);
+
+          // Show effect result
+          setTimeout(() => {
+            effectResult.classList.add('visible');
+          }, allDots.length * 50 + 1000);
+        }
+      }
+
+      window.addEventListener('scroll', animateGroups, { passive: true });
+      animateGroups();
+    }
+
+    // Initialize group comparison viz
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createGroupComparisonViz);
+    } else {
+      createGroupComparisonViz();
+    }
+
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        createTwoWorldsViz();
+      }, 200);
+    });
+  </script>
+</body>
+</html>

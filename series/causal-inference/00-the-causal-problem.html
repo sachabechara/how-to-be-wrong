@@ -1,0 +1,2369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The Causal Problem - Why correlation isn't causation, and what we can do about it. Part of the Causal Inference series.">
+  <title>Why Seeing Isn't Believing | Statistics: How to Be Wrong (Less Often)</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=Fraunces:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --accent: #4ecca3;
+      --text-primary: #f0f0f0;
+      --text-secondary: rgba(240, 240, 240, 0.92);
+      --text-muted: rgba(240, 240, 240, 0.7);
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --highlight: #9b59b6;
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 18px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Crimson Pro', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s var(--ease-in-out) forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Scroll Progress Indicator */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--highlight));
+      z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* Site Navigation */
+    .site-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-brand:hover {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 300;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      position: fixed;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%);
+      z-index: 50;
+    }
+
+    .toc-toggle {
+      display: none;
+    }
+
+    .toc {
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 4px;
+      padding: 1.5rem;
+      min-width: 200px;
+    }
+
+    .toc-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      margin-bottom: 0.75rem;
+    }
+
+    .toc-list a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-in-out);
+      display: block;
+      padding-left: 0.75rem;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-list a:hover,
+    .toc-list a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    /* Main Content */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    /* Episode Header */
+    .episode-header {
+      margin-bottom: 4rem;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.1s backwards;
+    }
+
+    .episode-series-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-series-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .episode-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .episode-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Article Content */
+    article {
+      color: var(--text-secondary);
+      animation: fadeIn 0.6s var(--ease-in-out) 0.2s backwards;
+    }
+
+    article p {
+      margin-bottom: 1.5rem;
+    }
+
+    article section {
+      margin-bottom: 3rem;
+    }
+
+    article h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    article h3 {
+      font-family: 'Crimson Pro', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    /* Visualization Container */
+    .viz-container {
+      margin: 3rem -2rem;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    /* Code/Labels */
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* Scatter Plot */
+    .scatter-plot {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+
+    .scatter-plot svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .scatter-plot .axis-line {
+      stroke: rgba(240, 240, 240, 0.3);
+      stroke-width: 1;
+    }
+
+    .scatter-plot .axis-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+    }
+
+    .scatter-plot .axis-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+    }
+
+    .scatter-plot .data-point {
+      fill: var(--accent);
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 0.3s var(--ease-in-out), r 0.2s var(--ease-in-out);
+      filter: drop-shadow(0 0 4px rgba(78, 204, 163, 0.3));
+    }
+
+    .scatter-plot .data-point.visible {
+      opacity: 0.7;
+    }
+
+    .scatter-plot .data-point:hover {
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(78, 204, 163, 0.6));
+    }
+
+    /* Tooltip */
+    .viz-tooltip {
+      position: fixed;
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(240, 240, 240, 0.2);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: opacity 0.2s var(--ease-in-out), transform 0.2s var(--ease-in-out);
+      z-index: 1000;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    .viz-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .viz-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .viz-tooltip-label {
+      color: var(--text-muted);
+    }
+
+    .viz-tooltip-value {
+      color: var(--accent);
+    }
+
+    /* Visualization Caption */
+    .viz-caption {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .viz-caption-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Visualization Controls */
+    .viz-controls {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .reveal-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-in-out);
+    }
+
+    .reveal-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .reveal-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .reveal-btn:disabled:hover {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    /* Reveal Label */
+    .viz-reveal-label {
+      text-align: center;
+      margin-top: 1.5rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s var(--ease-in-out), transform 0.5s var(--ease-in-out);
+    }
+
+    .viz-reveal-label.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .viz-reveal-text {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    /* Data point color transition for reveal */
+    .scatter-plot .data-point {
+      transition: fill 0.8s var(--ease-in-out), opacity 0.3s var(--ease-in-out), filter 0.8s var(--ease-in-out);
+    }
+
+    .scatter-plot .data-point.low-confidence {
+      fill: rgba(120, 120, 120, 0.8);
+      filter: drop-shadow(0 0 2px rgba(120, 120, 120, 0.2));
+    }
+
+    .scatter-plot .data-point.high-confidence {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 6px rgba(78, 204, 163, 0.5));
+    }
+
+    /* Confounding Diagram */
+    .confounding-diagram {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      position: relative;
+    }
+
+    .confounding-diagram svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .confounding-diagram .node {
+      opacity: 0;
+      transition: opacity 0.6s var(--ease-in-out);
+    }
+
+    .confounding-diagram .node.visible {
+      opacity: 1;
+    }
+
+    .confounding-diagram .node-circle {
+      stroke-width: 2;
+      fill: var(--bg);
+    }
+
+    .confounding-diagram .node-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .confounding-diagram .arrow {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .confounding-diagram .arrow-solid {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      transition: stroke-dashoffset 0.8s var(--ease-in-out);
+    }
+
+    .confounding-diagram .arrow-solid.visible {
+      stroke-dashoffset: 0;
+    }
+
+    .confounding-diagram .arrow-dashed {
+      stroke-dasharray: 8 4;
+      opacity: 0;
+      transition: opacity 0.6s var(--ease-in-out);
+    }
+
+    .confounding-diagram .arrow-dashed.visible {
+      opacity: 1;
+    }
+
+    .confounding-diagram .arrow-head {
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-in-out);
+    }
+
+    .confounding-diagram .arrow-head.visible {
+      opacity: 1;
+    }
+
+    .confounding-diagram .question-mark {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 300;
+      font-style: italic;
+      opacity: 0;
+      transition: opacity 0.6s var(--ease-in-out);
+    }
+
+    .confounding-diagram .question-mark.visible {
+      opacity: 1;
+    }
+
+    .diagram-caption {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.6s var(--ease-in-out), transform 0.6s var(--ease-in-out);
+    }
+
+    .diagram-caption.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Temperature color scale for ice cream plot */
+    .scatter-plot .data-point.temp-cold {
+      fill: #3498db;
+      filter: drop-shadow(0 0 3px rgba(52, 152, 219, 0.4));
+    }
+
+    .scatter-plot .data-point.temp-cool {
+      fill: #5dade2;
+      filter: drop-shadow(0 0 3px rgba(93, 173, 226, 0.4));
+    }
+
+    .scatter-plot .data-point.temp-mild {
+      fill: #f7dc6f;
+      filter: drop-shadow(0 0 3px rgba(247, 220, 111, 0.4));
+    }
+
+    .scatter-plot .data-point.temp-warm {
+      fill: #f39c12;
+      filter: drop-shadow(0 0 3px rgba(243, 156, 18, 0.4));
+    }
+
+    .scatter-plot .data-point.temp-hot {
+      fill: #e74c3c;
+      filter: drop-shadow(0 0 3px rgba(231, 76, 60, 0.4));
+    }
+
+    .scatter-plot .data-point.neutral {
+      fill: rgba(180, 180, 180, 0.8);
+      filter: drop-shadow(0 0 2px rgba(180, 180, 180, 0.3));
+    }
+
+    /* Self-Selection Visualization */
+    .self-selection-viz {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+
+    .self-selection-viz svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .self-selection-viz .person-circle {
+      transition: cx 1s var(--ease-in-out), cy 1s var(--ease-in-out), opacity 0.5s var(--ease-in-out);
+    }
+
+    .self-selection-viz .group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+    }
+
+    .self-selection-viz .group-zone {
+      fill: rgba(255, 255, 255, 0.02);
+      stroke: rgba(240, 240, 240, 0.1);
+      stroke-width: 1;
+      rx: 8;
+    }
+
+    .self-selection-viz .avg-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 400;
+      fill: var(--text-primary);
+      text-anchor: middle;
+      opacity: 0;
+      transition: opacity 0.5s var(--ease-in-out);
+    }
+
+    .self-selection-viz .avg-label.visible {
+      opacity: 1;
+    }
+
+    .self-selection-viz .coin-symbol {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      font-weight: 400;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      opacity: 0;
+    }
+
+    .self-selection-caption {
+      transition: opacity 0.3s var(--ease-in-out);
+    }
+
+    /* Claims Grid */
+    .claims-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    .claim-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(240, 240, 240, 0.1);
+      border-radius: 6px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      overflow: hidden;
+      transition: all 0.3s var(--ease-in-out);
+      cursor: default;
+    }
+
+    .claim-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(240, 240, 240, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .claim-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Fraunces', serif;
+      font-size: 4rem;
+      font-weight: 300;
+      font-style: italic;
+      color: rgba(240, 240, 240, 0.05);
+      pointer-events: none;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .claim-card:hover .claim-watermark {
+      color: rgba(243, 156, 18, 0.1);
+    }
+
+    .claim-text {
+      position: relative;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .claim-card:hover .claim-text {
+      color: var(--text-primary);
+    }
+
+    @media (max-width: 768px) {
+      .claims-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .claims-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .claim-card {
+        padding: 1.25rem 1rem;
+      }
+
+      .claim-watermark {
+        font-size: 3rem;
+      }
+    }
+
+    /* Episode Navigation */
+    .episode-nav {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(240, 240, 240, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.6s var(--ease-in-out) 0.3s backwards;
+    }
+
+    .episode-nav-link {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      max-width: 45%;
+      padding: 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .episode-nav-link--prev {
+      align-items: flex-start;
+    }
+
+    .episode-nav-link--next {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .episode-nav-direction {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .episode-nav-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      transition: color 0.3s var(--ease-in-out);
+    }
+
+    .episode-nav-link:hover .episode-nav-title {
+      color: var(--text-primary);
+    }
+
+    .episode-nav-link--disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .toc-container {
+        position: fixed;
+        top: auto;
+        bottom: 2rem;
+        right: 2rem;
+        transform: none;
+      }
+
+      .toc-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: var(--bg);
+        border: 1px solid rgba(240, 240, 240, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .toc-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-secondary);
+        transition: stroke 0.3s var(--ease-in-out);
+      }
+
+      .toc-toggle:hover svg {
+        stroke: var(--accent);
+      }
+
+      .toc {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s var(--ease-in-out);
+      }
+
+      .toc-container.open .toc {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+
+      .site-nav {
+        padding: 1rem;
+      }
+
+      .nav-brand {
+        font-size: 0.9rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      main {
+        padding: 6rem 1.5rem 3rem;
+      }
+
+      .episode-title {
+        font-size: 2.2rem;
+      }
+
+      .episode-series-name {
+        font-size: 1rem;
+      }
+
+      .episode-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .viz-container {
+        margin: 2rem -1.5rem;
+        padding: 1.5rem;
+      }
+
+      .episode-nav {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .episode-nav-link {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .episode-nav-link--next {
+        margin-left: 0;
+      }
+
+      .toc-container {
+        bottom: 1rem;
+        right: 1rem;
+      }
+
+      footer {
+        padding: 2rem 1.5rem 3rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      html {
+        font-size: 15px;
+      }
+
+      main {
+        padding: 5rem 1rem 2rem;
+      }
+
+      .episode-title {
+        font-size: 1.9rem;
+      }
+
+      .viz-container {
+        margin: 1.5rem -1rem;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Tooltip -->
+  <div class="viz-tooltip" id="tooltip">
+    <div class="viz-tooltip-row">
+      <span class="viz-tooltip-label">Availability:</span>
+      <span class="viz-tooltip-value" id="tooltipAvailability"></span>
+    </div>
+    <div class="viz-tooltip-row">
+      <span class="viz-tooltip-label">Interest:</span>
+      <span class="viz-tooltip-value" id="tooltipInterest"></span>
+    </div>
+    <div class="viz-tooltip-row" id="tooltipConfidenceRow" style="display: none;">
+      <span class="viz-tooltip-label">Confidence:</span>
+      <span class="viz-tooltip-value" id="tooltipConfidence"></span>
+    </div>
+  </div>
+
+  <!-- Site Navigation -->
+  <nav class="site-nav">
+    <a href="../../index.html" class="nav-brand">Statistics: How to Be Wrong (Less Often)</a>
+    <ul class="nav-links">
+      <li><a href="../index.html">series</a></li>
+      <li><a href="../../resources/index.html">resources</a></li>
+      <li><a href="../../about/index.html">about</a></li>
+    </ul>
+  </nav>
+
+  <!-- Table of Contents -->
+  <aside class="toc-container" id="tocContainer">
+    <button class="toc-toggle" id="tocToggle" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="15" y2="12"></line>
+        <line x1="3" y1="18" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <nav class="toc">
+      <p class="toc-title">In this episode</p>
+      <ul class="toc-list">
+        <li><a href="#the-setup">The Setup</a></li>
+        <li><a href="#the-turn">The Turn</a></li>
+        <li><a href="#naming-the-problem">Naming the Problem</a></li>
+        <li><a href="#its-everywhere">It's Everywhere</a></li>
+        <li><a href="#breaking-the-link">Breaking the Link</a></li>
+        <li><a href="#the-road-ahead">The Road Ahead</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <header class="episode-header">
+      <p class="episode-series-label">Series</p>
+      <p class="episode-series-name">Causal Inference</p>
+      <p class="episode-number">Episode 00</p>
+      <h1 class="episode-title">Why Seeing Isn't Believing</h1>
+      <p class="episode-subtitle">Why correlation isn't causation, and what we can do about it</p>
+    </header>
+
+    <article>
+      <section id="the-setup">
+        <h2>The Setup</h2>
+
+        <p>You've heard the advice. Don't reply too quickly. Keep some mystery. Don't rearrange your entire week the moment someone suggests plans.</p>
+
+        <p>And it does seem to track. The people who maintain a certain distance tend to be the ones pursued. The ones who show all their cards early, who are endlessly available? They seem to struggle.</p>
+
+        <p>So the conclusion writes itself: playing hard to get works.</p>
+
+        <p>But does it?</p>
+
+        <p>Suppose you collected data. You surveyed 200 people about their dating lives. Those who described themselves as "less immediately available" reported more interest from potential partners. Those who "made time quickly" reported less.</p>
+
+        <!-- Scatter Plot Visualization -->
+        <div class="viz-container">
+          <div class="scatter-plot" id="scatterPlot">
+            <svg id="scatterSvg" aria-label="Scatter plot showing negative correlation between availability and interest received"></svg>
+          </div>
+          <div class="viz-caption">
+            <span class="viz-caption-text">Survey results from 200 participants</span>
+          </div>
+        </div>
+
+        <p>The pattern is consistent. Would you advise a friend to hold back a little?</p>
+      </section>
+
+      <section id="the-turn">
+        <h2>The Turn</h2>
+
+        <p>But who plays hard to get in the first place?</p>
+
+        <p>Think about what it takes to pull off "unavailable."</p>
+
+        <p>You need other things going on. A life compelling enough that you're not checking your phone constantly. The quiet confidence that comes from knowing this isn't your only chance. Options, or at least the self-assurance that suggests you could have them.</p>
+
+        <p>Maybe those people would attract interest no matter what they did.</p>
+
+        <!-- Reveal Scatter Plot Visualization -->
+        <div class="viz-container">
+          <div class="scatter-plot" id="revealScatterPlot">
+            <svg id="revealScatterSvg" aria-label="Scatter plot revealing confidence as a confounding variable"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="reveal-btn" id="revealBtn">Reveal the hidden variable</button>
+          </div>
+          <div class="viz-reveal-label" id="revealLabel">
+            <span class="viz-reveal-text">The same data. A different story.</span>
+          </div>
+        </div>
+
+        <p>Or perhaps the causation runs the other way entirely. People begin playing hard to get <em>after</em> they sense interest. They're not creating attraction — they're responding to attraction that already exists.</p>
+
+        <p>The "strategy" might be a symptom of success, not its cause.</p>
+      </section>
+
+      <section id="naming-the-problem">
+        <h2>Naming the Problem</h2>
+
+        <p>What you've just experienced has a name. Statisticians call it <em>confounding</em>.</p>
+
+        <p>A confounder is something that affects both the thing you think is the cause and the thing you think is the effect. Confidence affects whether you play hard to get. Confidence also affects whether people are drawn to you. So when you see a correlation between playing hard to get and attraction, you can't tell how much is the strategy and how much is the confidence underneath.</p>
+
+        <!-- Confounding Diagram -->
+        <div class="viz-container">
+          <div class="confounding-diagram" id="confoundingDiagram">
+            <svg id="confoundingSvg" aria-label="Diagram showing confounding relationship between confidence, playing hard to get, and attraction"></svg>
+          </div>
+          <div class="viz-caption diagram-caption" id="diagramCaption">
+            <span class="viz-caption-text">The dashed line is what we want to know. The solid lines are what's getting in the way.</span>
+          </div>
+        </div>
+
+        <p>This is the problem at the heart of every causal question. You see a pattern. You want to know if one thing causes another. But lurking behind both is something else — something that makes them move together without one actually causing the other.</p>
+      </section>
+
+      <section id="its-everywhere">
+        <h2>It's Everywhere</h2>
+
+        <p>Here's another one. Ice cream sales and drowning deaths are strongly correlated. When ice cream sales rise, drowning deaths rise. When sales fall, deaths fall.</p>
+
+        <p>Should we ban ice cream?</p>
+
+        <!-- Ice Cream Scatter Plot -->
+        <div class="viz-container">
+          <div class="scatter-plot" id="iceCreamScatterPlot">
+            <svg id="iceCreamScatterSvg" aria-label="Scatter plot showing correlation between ice cream sales and drowning deaths"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="reveal-btn" id="temperatureBtn">Show temperature</button>
+          </div>
+          <div class="viz-reveal-label" id="temperatureLabel">
+            <span class="viz-reveal-text">Summer.</span>
+          </div>
+        </div>
+
+        <p>Temperature drives both. Hot weather makes people buy ice cream. Hot weather makes people swim. Some swimmers drown. Ice cream doesn't kill anyone.</p>
+
+        <p>This example is obvious. The dating one felt less obvious. That's the danger — confounding is easiest to spot when the example is absurd. When it's something you care about, something you've built beliefs around, the patterns feel like truth.</p>
+      </section>
+
+      <section id="breaking-the-link">
+        <h2>Breaking the Link</h2>
+
+        <p>So how would you actually know if playing hard to get works?</p>
+
+        <p>Here's the problem in concrete terms. Imagine 20 people. Some are confident, some aren't. Watch what happens when they choose their own strategy.</p>
+
+        <!-- Self-Selection Visualization -->
+        <div class="viz-container">
+          <div class="self-selection-viz" id="selfSelectionViz">
+            <svg id="selfSelectionSvg" aria-label="Visualization showing self-selection bias and randomization"></svg>
+          </div>
+          <div class="viz-controls">
+            <button class="reveal-btn" id="randomizeBtn">Randomize with coin flips</button>
+          </div>
+          <div class="viz-caption self-selection-caption" id="selfSelectionCaption">
+            <span class="viz-caption-text">When people choose, the groups are unbalanced.</span>
+          </div>
+        </div>
+
+        <p>Both groups now contain confident people and unconfident people in roughly equal measure. If the "plays hard to get" group still gets more interest, it can't be because they were more confident. The confidence is the same on both sides.</p>
+
+        <p>This is what an experiment does. Not magic. Just: take the thing that was causing the groups to be different, and spread it evenly.</p>
+      </section>
+
+      <section id="the-road-ahead">
+        <h2>The Road Ahead</h2>
+
+        <p>You've now seen the core problem. A correlation appears. You want to conclude that one thing causes another. But something else — something you didn't notice — is driving both.</p>
+
+        <p>The dating advice industry runs on this confusion. So does most health journalism. And business books. And life advice passed between friends.</p>
+
+        <p>"Successful people wake up early." Maybe. Or maybe the traits that make someone successful also make them morning people.</p>
+
+        <p>"Couples who travel together stay together." Maybe. Or maybe stable, wealthy couples can afford to travel in the first place.</p>
+
+        <p>"People who journal are happier." Maybe. Or maybe people who journal were already the reflective, emotionally aware types who tend toward contentment.</p>
+
+        <!-- Correlation Claims Grid -->
+        <div class="viz-container">
+          <div class="claims-grid" id="claimsGrid">
+            <div class="claim-card" data-index="0">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Morning routines → Success</span>
+            </div>
+            <div class="claim-card" data-index="1">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Travel → Relationship health</span>
+            </div>
+            <div class="claim-card" data-index="2">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Journaling → Happiness</span>
+            </div>
+            <div class="claim-card" data-index="3">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Meditation → Productivity</span>
+            </div>
+            <div class="claim-card" data-index="4">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Reading → Intelligence</span>
+            </div>
+            <div class="claim-card" data-index="5">
+              <span class="claim-watermark">?</span>
+              <span class="claim-text">Exercise → Confidence</span>
+            </div>
+          </div>
+        </div>
+
+        <p>Every one of these might be true. Some probably are. But you can't know from the pattern alone.</p>
+
+        <p>The rest of this series builds the tools to think clearly about these questions. We'll develop precise language for what we mean by "cause." We'll see why individual effects are fundamentally impossible to observe. We'll understand what experiments actually estimate, and what that tells us about our own decisions.</p>
+
+        <p>It starts with a simple framework — two possible worlds, and the difference between them.</p>
+      </section>
+    </article>
+
+    <!-- Episode Navigation -->
+    <nav class="episode-nav">
+      <a href="#" class="episode-nav-link episode-nav-link--prev episode-nav-link--disabled">
+        <span class="episode-nav-direction">Previous</span>
+        <span class="episode-nav-title">No previous episode</span>
+      </a>
+      <a href="00-5-potential-outcomes.html" class="episode-nav-link episode-nav-link--next">
+        <span class="episode-nav-direction">Next</span>
+        <span class="episode-nav-title">The Two Worlds Problem</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>
+    <p class="footer-text">Statistics: How to Be Wrong (Less Often)</p>
+  </footer>
+
+  <script>
+    // Scroll Progress Indicator
+    const scrollProgress = document.getElementById('scrollProgress');
+
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      scrollProgress.style.width = scrollPercent + '%';
+    }
+
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    updateScrollProgress();
+
+    // Table of Contents Toggle (for mobile/tablet)
+    const tocContainer = document.getElementById('tocContainer');
+    const tocToggle = document.getElementById('tocToggle');
+
+    tocToggle.addEventListener('click', () => {
+      tocContainer.classList.toggle('open');
+    });
+
+    // Close TOC when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!tocContainer.contains(e.target)) {
+        tocContainer.classList.remove('open');
+      }
+    });
+
+    // Active section highlighting in TOC
+    const sections = document.querySelectorAll('article section[id]');
+    const tocLinks = document.querySelectorAll('.toc-list a');
+
+    function highlightActiveSection() {
+      const scrollPos = window.scrollY + 150;
+
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+
+        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+          tocLinks.forEach((link) => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + sectionId) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', highlightActiveSection, { passive: true });
+    highlightActiveSection();
+
+    // Smooth scroll for TOC links
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+          tocContainer.classList.remove('open');
+        }
+      });
+    });
+
+    // =====================
+    // Scatter Plot Visualization
+    // =====================
+
+    // Seeded random number generator for reproducibility
+    function seededRandom(seed) {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // Generate synthetic data with negative correlation
+    function generateData(n, seed) {
+      const data = [];
+      for (let i = 0; i < n; i++) {
+        const availability = seededRandom(seed + i) * 10;
+        // Negative correlation with noise
+        const baseInterest = 10 - availability;
+        const noise = (seededRandom(seed + i + 1000) - 0.5) * 4;
+        const interest = Math.max(0, Math.min(10, baseInterest + noise));
+        data.push({
+          availability: availability,
+          interest: interest,
+          id: i
+        });
+      }
+      return data;
+    }
+
+    // Create scatter plot
+    function createScatterPlot() {
+      const svg = document.getElementById('scatterSvg');
+      const container = document.getElementById('scatterPlot');
+      const tooltip = document.getElementById('tooltip');
+      const tooltipAvailability = document.getElementById('tooltipAvailability');
+      const tooltipInterest = document.getElementById('tooltipInterest');
+
+      if (!svg || !container) return;
+
+      // Get dimensions
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      // Margins
+      const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+      const plotWidth = width - margin.left - margin.right;
+      const plotHeight = height - margin.top - margin.bottom;
+
+      // Set SVG viewBox
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Generate data
+      const data = generateData(80, 42);
+
+      // Scale functions
+      const xScale = (val) => margin.left + (val / 10) * plotWidth;
+      const yScale = (val) => margin.top + plotHeight - (val / 10) * plotHeight;
+
+      // Build SVG content
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}"/>`;
+
+      // Y-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}"/>`;
+
+      // X-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const x = xScale(i);
+        svgContent += `<line class="axis-line" x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${margin.top + plotHeight + 5}"/>`;
+        svgContent += `<text class="axis-label" x="${x}" y="${margin.top + plotHeight + 20}" text-anchor="middle">${i}</text>`;
+      }
+
+      // Y-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const y = yScale(i);
+        svgContent += `<line class="axis-line" x1="${margin.left - 5}" y1="${y}" x2="${margin.left}" y2="${y}"/>`;
+        svgContent += `<text class="axis-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${i}</text>`;
+      }
+
+      // X-axis title
+      svgContent += `<text class="axis-title" x="${margin.left + plotWidth / 2}" y="${height - 8}" text-anchor="middle">Availability</text>`;
+
+      // Y-axis title
+      svgContent += `<text class="axis-title" x="${15}" y="${margin.top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90, 15, ${margin.top + plotHeight / 2})">Interest received</text>`;
+
+      // Data points
+      data.forEach((d, i) => {
+        const cx = xScale(d.availability);
+        const cy = yScale(d.interest);
+        svgContent += `<circle class="data-point" cx="${cx}" cy="${cy}" r="5" data-availability="${d.availability.toFixed(1)}" data-interest="${d.interest.toFixed(1)}" data-index="${i}"/>`;
+      });
+
+      svg.innerHTML = svgContent;
+
+      // Get all data points
+      const points = svg.querySelectorAll('.data-point');
+
+      // Tooltip handling
+      points.forEach((point) => {
+        point.addEventListener('mouseenter', (e) => {
+          const availability = e.target.getAttribute('data-availability');
+          const interest = e.target.getAttribute('data-interest');
+          tooltipAvailability.textContent = availability;
+          tooltipInterest.textContent = interest;
+          tooltip.classList.add('visible');
+        });
+
+        point.addEventListener('mousemove', (e) => {
+          tooltip.style.left = (e.clientX + 15) + 'px';
+          tooltip.style.top = (e.clientY - 10) + 'px';
+        });
+
+        point.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+        });
+      });
+
+      // Scroll-triggered animation
+      let animated = false;
+
+      function animatePoints() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        // Check if container is in viewport
+        if (containerRect.top < viewportHeight * 0.8 && containerRect.bottom > 0) {
+          animated = true;
+
+          points.forEach((point, i) => {
+            setTimeout(() => {
+              point.classList.add('visible');
+            }, i * 15);
+          });
+        }
+      }
+
+      window.addEventListener('scroll', animatePoints, { passive: true });
+      animatePoints(); // Check on load
+    }
+
+    // Initialize scatter plot when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createScatterPlot);
+    } else {
+      createScatterPlot();
+    }
+
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        createScatterPlot();
+        createRevealScatterPlot();
+        createConfoundingDiagram();
+        createIceCreamScatterPlot();
+        createSelfSelectionViz();
+      }, 200);
+    });
+
+    // =====================
+    // Reveal Scatter Plot (Section 2)
+    // =====================
+
+    // Generate data with confidence as confounding variable
+    function generateRevealData(n, seed) {
+      const data = [];
+      for (let i = 0; i < n; i++) {
+        // Confidence is the hidden confounder (0-10)
+        const confidence = seededRandom(seed + i * 3) * 10;
+
+        // High confidence leads to low availability (they're busy, have options)
+        const availabilityBase = 10 - confidence * 0.7;
+        const availabilityNoise = (seededRandom(seed + i + 500) - 0.5) * 3;
+        const availability = Math.max(0, Math.min(10, availabilityBase + availabilityNoise));
+
+        // High confidence also leads to high interest received (they're attractive)
+        const interestBase = confidence * 0.8;
+        const interestNoise = (seededRandom(seed + i + 2000) - 0.5) * 2.5;
+        const interest = Math.max(0, Math.min(10, interestBase + interestNoise));
+
+        data.push({
+          availability: availability,
+          interest: interest,
+          confidence: confidence,
+          id: i
+        });
+      }
+      return data;
+    }
+
+    // Store reveal plot state
+    let revealPlotRevealed = false;
+    let revealPlotData = null;
+
+    function createRevealScatterPlot() {
+      const svg = document.getElementById('revealScatterSvg');
+      const container = document.getElementById('revealScatterPlot');
+      const revealBtn = document.getElementById('revealBtn');
+      const revealLabel = document.getElementById('revealLabel');
+      const tooltip = document.getElementById('tooltip');
+      const tooltipAvailability = document.getElementById('tooltipAvailability');
+      const tooltipInterest = document.getElementById('tooltipInterest');
+      const tooltipConfidenceRow = document.getElementById('tooltipConfidenceRow');
+      const tooltipConfidence = document.getElementById('tooltipConfidence');
+
+      if (!svg || !container) return;
+
+      // Get dimensions
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      // Margins
+      const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+      const plotWidth = width - margin.left - margin.right;
+      const plotHeight = height - margin.top - margin.bottom;
+
+      // Set SVG viewBox
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Generate data (or reuse existing)
+      if (!revealPlotData) {
+        revealPlotData = generateRevealData(80, 123);
+      }
+      const data = revealPlotData;
+
+      // Scale functions
+      const xScale = (val) => margin.left + (val / 10) * plotWidth;
+      const yScale = (val) => margin.top + plotHeight - (val / 10) * plotHeight;
+
+      // Build SVG content
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}"/>`;
+
+      // Y-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}"/>`;
+
+      // X-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const x = xScale(i);
+        svgContent += `<line class="axis-line" x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${margin.top + plotHeight + 5}"/>`;
+        svgContent += `<text class="axis-label" x="${x}" y="${margin.top + plotHeight + 20}" text-anchor="middle">${i}</text>`;
+      }
+
+      // Y-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const y = yScale(i);
+        svgContent += `<line class="axis-line" x1="${margin.left - 5}" y1="${y}" x2="${margin.left}" y2="${y}"/>`;
+        svgContent += `<text class="axis-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${i}</text>`;
+      }
+
+      // X-axis title
+      svgContent += `<text class="axis-title" x="${margin.left + plotWidth / 2}" y="${height - 8}" text-anchor="middle">Availability</text>`;
+
+      // Y-axis title
+      svgContent += `<text class="axis-title" x="${15}" y="${margin.top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90, 15, ${margin.top + plotHeight / 2})">Interest received</text>`;
+
+      // Data points
+      data.forEach((d, i) => {
+        const cx = xScale(d.availability);
+        const cy = yScale(d.interest);
+        const confidenceClass = revealPlotRevealed ? (d.confidence > 5 ? 'high-confidence' : 'low-confidence') : '';
+        svgContent += `<circle class="data-point ${confidenceClass}" cx="${cx}" cy="${cy}" r="5" data-availability="${d.availability.toFixed(1)}" data-interest="${d.interest.toFixed(1)}" data-confidence="${d.confidence.toFixed(1)}" data-index="${i}"/>`;
+      });
+
+      svg.innerHTML = svgContent;
+
+      // Get all data points
+      const points = svg.querySelectorAll('.data-point');
+
+      // Tooltip handling
+      points.forEach((point) => {
+        point.addEventListener('mouseenter', (e) => {
+          const availability = e.target.getAttribute('data-availability');
+          const interest = e.target.getAttribute('data-interest');
+          const confidence = e.target.getAttribute('data-confidence');
+          tooltipAvailability.textContent = availability;
+          tooltipInterest.textContent = interest;
+
+          if (revealPlotRevealed) {
+            tooltipConfidenceRow.style.display = 'flex';
+            tooltipConfidence.textContent = confidence;
+          } else {
+            tooltipConfidenceRow.style.display = 'none';
+          }
+
+          tooltip.classList.add('visible');
+        });
+
+        point.addEventListener('mousemove', (e) => {
+          tooltip.style.left = (e.clientX + 15) + 'px';
+          tooltip.style.top = (e.clientY - 10) + 'px';
+        });
+
+        point.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+        });
+      });
+
+      // Scroll-triggered animation
+      let animated = container.dataset.animated === 'true';
+
+      function animateRevealPoints() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.8 && containerRect.bottom > 0) {
+          animated = true;
+          container.dataset.animated = 'true';
+
+          points.forEach((point, i) => {
+            setTimeout(() => {
+              point.classList.add('visible');
+            }, i * 15);
+          });
+        }
+      }
+
+      window.addEventListener('scroll', animateRevealPoints, { passive: true });
+      animateRevealPoints();
+
+      // Reveal button handler
+      if (revealBtn && !revealBtn.dataset.listenerAdded) {
+        revealBtn.dataset.listenerAdded = 'true';
+        revealBtn.addEventListener('click', () => {
+          if (revealPlotRevealed) return;
+
+          revealPlotRevealed = true;
+          revealBtn.disabled = true;
+          revealBtn.textContent = 'Confidence revealed';
+
+          // Apply confidence-based coloring with staggered animation
+          points.forEach((point, i) => {
+            const confidence = parseFloat(point.getAttribute('data-confidence'));
+            setTimeout(() => {
+              if (confidence > 5) {
+                point.classList.add('high-confidence');
+              } else {
+                point.classList.add('low-confidence');
+              }
+            }, i * 20);
+          });
+
+          // Show reveal label after animation
+          setTimeout(() => {
+            revealLabel.classList.add('visible');
+          }, points.length * 20 + 300);
+        });
+      }
+    }
+
+    // Initialize reveal scatter plot
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createRevealScatterPlot);
+    } else {
+      createRevealScatterPlot();
+    }
+
+    // =====================
+    // Confounding Diagram (Section 3)
+    // =====================
+
+    function createConfoundingDiagram() {
+      const svg = document.getElementById('confoundingSvg');
+      const container = document.getElementById('confoundingDiagram');
+      const caption = document.getElementById('diagramCaption');
+
+      if (!svg || !container) return;
+
+      // Get dimensions
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      // Set SVG viewBox
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Node positions
+      const centerX = width / 2;
+      const topY = height * 0.2;
+      const bottomY = height * 0.75;
+      const leftX = width * 0.22;
+      const rightX = width * 0.78;
+      const nodeRadius = Math.min(width, height) * 0.12;
+
+      // Colors
+      const confidenceColor = '#f39c12';
+      const hardToGetColor = '#9b59b6';
+      const attractionColor = '#4ecca3';
+      const textColor = 'rgba(240, 240, 240, 0.95)';
+      const questionColor = 'rgba(240, 240, 240, 0.7)';
+
+      // Calculate arrow endpoints (from edge of circles)
+      function getArrowPoints(x1, y1, x2, y2, r1, r2) {
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        return {
+          x1: x1 + Math.cos(angle) * r1,
+          y1: y1 + Math.sin(angle) * r1,
+          x2: x2 - Math.cos(angle) * r2,
+          y2: y2 - Math.sin(angle) * r2
+        };
+      }
+
+      // Arrow from Confidence to Hard to Get
+      const arrow1 = getArrowPoints(centerX, topY, leftX, bottomY, nodeRadius, nodeRadius);
+
+      // Arrow from Confidence to Attraction
+      const arrow2 = getArrowPoints(centerX, topY, rightX, bottomY, nodeRadius, nodeRadius);
+
+      // Dashed arrow from Hard to Get to Attraction
+      const arrow3 = getArrowPoints(leftX, bottomY, rightX, bottomY, nodeRadius, nodeRadius);
+
+      // Question mark position (middle of dashed arrow, slightly above)
+      const questionX = (arrow3.x1 + arrow3.x2) / 2;
+      const questionY = arrow3.y1 - 25;
+
+      // Build SVG content
+      let svgContent = '';
+
+      // Arrow definitions (arrowheads)
+      svgContent += `
+        <defs>
+          <marker id="arrowhead-confidence" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="${confidenceColor}" class="arrow-head" />
+          </marker>
+          <marker id="arrowhead-question" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="${questionColor}" class="arrow-head" />
+          </marker>
+        </defs>
+      `;
+
+      // Arrow 1: Confidence → Hard to Get (solid)
+      svgContent += `
+        <path class="arrow arrow-solid" id="arrow1"
+          d="M ${arrow1.x1} ${arrow1.y1} L ${arrow1.x2} ${arrow1.y2}"
+          stroke="${confidenceColor}"
+          marker-end="url(#arrowhead-confidence)" />
+      `;
+
+      // Arrow 2: Confidence → Attraction (solid)
+      svgContent += `
+        <path class="arrow arrow-solid" id="arrow2"
+          d="M ${arrow2.x1} ${arrow2.y1} L ${arrow2.x2} ${arrow2.y2}"
+          stroke="${confidenceColor}"
+          marker-end="url(#arrowhead-confidence)" />
+      `;
+
+      // Arrow 3: Hard to Get → Attraction (dashed)
+      svgContent += `
+        <path class="arrow arrow-dashed" id="arrow3"
+          d="M ${arrow3.x1} ${arrow3.y1} L ${arrow3.x2} ${arrow3.y2}"
+          stroke="${questionColor}"
+          marker-end="url(#arrowhead-question)" />
+      `;
+
+      // Question mark
+      svgContent += `
+        <text class="question-mark" id="questionMark" x="${questionX}" y="${questionY}" fill="${questionColor}" text-anchor="middle">?</text>
+      `;
+
+      // Node 1: Confidence (top center)
+      svgContent += `
+        <g class="node" id="nodeConfidence">
+          <circle class="node-circle" cx="${centerX}" cy="${topY}" r="${nodeRadius}" stroke="${confidenceColor}" />
+          <text class="node-label" x="${centerX}" y="${topY}" fill="${confidenceColor}">Confidence</text>
+        </g>
+      `;
+
+      // Node 2: Playing hard to get (bottom left)
+      svgContent += `
+        <g class="node" id="nodeHardToGet">
+          <circle class="node-circle" cx="${leftX}" cy="${bottomY}" r="${nodeRadius}" stroke="${hardToGetColor}" />
+          <text class="node-label" x="${leftX}" y="${bottomY - 8}" fill="${hardToGetColor}">Playing hard</text>
+          <text class="node-label" x="${leftX}" y="${bottomY + 8}" fill="${hardToGetColor}">to get</text>
+        </g>
+      `;
+
+      // Node 3: Attraction received (bottom right)
+      svgContent += `
+        <g class="node" id="nodeAttraction">
+          <circle class="node-circle" cx="${rightX}" cy="${bottomY}" r="${nodeRadius}" stroke="${attractionColor}" />
+          <text class="node-label" x="${rightX}" y="${bottomY - 8}" fill="${attractionColor}">Attraction</text>
+          <text class="node-label" x="${rightX}" y="${bottomY + 8}" fill="${attractionColor}">received</text>
+        </g>
+      `;
+
+      svg.innerHTML = svgContent;
+
+      // Animation sequence
+      let animationStarted = false;
+
+      function startAnimation() {
+        if (animationStarted) return;
+        animationStarted = true;
+
+        const nodeConfidence = document.getElementById('nodeConfidence');
+        const nodeHardToGet = document.getElementById('nodeHardToGet');
+        const nodeAttraction = document.getElementById('nodeAttraction');
+        const arrow1El = document.getElementById('arrow1');
+        const arrow2El = document.getElementById('arrow2');
+        const arrow3El = document.getElementById('arrow3');
+        const questionMark = document.getElementById('questionMark');
+
+        // Step 1: Fade in nodes (staggered)
+        setTimeout(() => {
+          nodeConfidence.classList.add('visible');
+        }, 0);
+
+        setTimeout(() => {
+          nodeHardToGet.classList.add('visible');
+        }, 200);
+
+        setTimeout(() => {
+          nodeAttraction.classList.add('visible');
+        }, 400);
+
+        // Step 2: Animate arrow from Confidence to Hard to Get
+        setTimeout(() => {
+          arrow1El.classList.add('visible');
+        }, 800);
+
+        // Step 3: Animate arrow from Confidence to Attraction
+        setTimeout(() => {
+          arrow2El.classList.add('visible');
+        }, 1600);
+
+        // Step 4: Show dashed arrow and question mark
+        setTimeout(() => {
+          arrow3El.classList.add('visible');
+        }, 2400);
+
+        setTimeout(() => {
+          questionMark.classList.add('visible');
+        }, 2700);
+
+        // Step 5: Show caption
+        setTimeout(() => {
+          caption.classList.add('visible');
+        }, 3200);
+      }
+
+      // Scroll trigger
+      function checkScroll() {
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.7 && containerRect.bottom > 0) {
+          startAnimation();
+          window.removeEventListener('scroll', checkScroll);
+        }
+      }
+
+      window.addEventListener('scroll', checkScroll, { passive: true });
+      checkScroll(); // Check on load
+    }
+
+    // Initialize confounding diagram
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createConfoundingDiagram);
+    } else {
+      createConfoundingDiagram();
+    }
+
+    // =====================
+    // Ice Cream Scatter Plot (Section 4)
+    // =====================
+
+    // Generate ice cream / drowning data with temperature as confounder
+    function generateIceCreamData(n, seed) {
+      const data = [];
+      for (let i = 0; i < n; i++) {
+        // Temperature is the hidden confounder (0-10, representing cold to hot)
+        const temperature = seededRandom(seed + i * 7) * 10;
+
+        // Hot weather → more ice cream sales
+        const iceCreamBase = temperature * 0.85;
+        const iceCreamNoise = (seededRandom(seed + i + 300) - 0.5) * 2;
+        const iceCream = Math.max(0, Math.min(10, iceCreamBase + iceCreamNoise));
+
+        // Hot weather → more swimming → more drowning
+        const drowningBase = temperature * 0.75;
+        const drowningNoise = (seededRandom(seed + i + 600) - 0.5) * 2.5;
+        const drowning = Math.max(0, Math.min(10, drowningBase + drowningNoise));
+
+        data.push({
+          iceCream: iceCream,
+          drowning: drowning,
+          temperature: temperature,
+          id: i
+        });
+      }
+      return data;
+    }
+
+    // Get temperature class based on temperature value
+    function getTemperatureClass(temp) {
+      if (temp < 2) return 'temp-cold';
+      if (temp < 4) return 'temp-cool';
+      if (temp < 6) return 'temp-mild';
+      if (temp < 8) return 'temp-warm';
+      return 'temp-hot';
+    }
+
+    // Store ice cream plot state
+    let iceCreamRevealed = false;
+    let iceCreamData = null;
+
+    function createIceCreamScatterPlot() {
+      const svg = document.getElementById('iceCreamScatterSvg');
+      const container = document.getElementById('iceCreamScatterPlot');
+      const temperatureBtn = document.getElementById('temperatureBtn');
+      const temperatureLabel = document.getElementById('temperatureLabel');
+      const tooltip = document.getElementById('tooltip');
+      const tooltipAvailability = document.getElementById('tooltipAvailability');
+      const tooltipInterest = document.getElementById('tooltipInterest');
+      const tooltipConfidenceRow = document.getElementById('tooltipConfidenceRow');
+      const tooltipConfidence = document.getElementById('tooltipConfidence');
+
+      if (!svg || !container) return;
+
+      // Get dimensions
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      // Margins
+      const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+      const plotWidth = width - margin.left - margin.right;
+      const plotHeight = height - margin.top - margin.bottom;
+
+      // Set SVG viewBox
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Generate data (or reuse existing)
+      if (!iceCreamData) {
+        iceCreamData = generateIceCreamData(60, 777);
+      }
+      const data = iceCreamData;
+
+      // Scale functions
+      const xScale = (val) => margin.left + (val / 10) * plotWidth;
+      const yScale = (val) => margin.top + plotHeight - (val / 10) * plotHeight;
+
+      // Build SVG content
+      let svgContent = '';
+
+      // X-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}"/>`;
+
+      // Y-axis
+      svgContent += `<line class="axis-line" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}"/>`;
+
+      // X-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const x = xScale(i);
+        svgContent += `<line class="axis-line" x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${margin.top + plotHeight + 5}"/>`;
+        svgContent += `<text class="axis-label" x="${x}" y="${margin.top + plotHeight + 20}" text-anchor="middle">${i}</text>`;
+      }
+
+      // Y-axis ticks and labels
+      for (let i = 0; i <= 10; i += 2) {
+        const y = yScale(i);
+        svgContent += `<line class="axis-line" x1="${margin.left - 5}" y1="${y}" x2="${margin.left}" y2="${y}"/>`;
+        svgContent += `<text class="axis-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${i}</text>`;
+      }
+
+      // X-axis title
+      svgContent += `<text class="axis-title" x="${margin.left + plotWidth / 2}" y="${height - 8}" text-anchor="middle">Ice cream sales</text>`;
+
+      // Y-axis title
+      svgContent += `<text class="axis-title" x="${15}" y="${margin.top + plotHeight / 2}" text-anchor="middle" transform="rotate(-90, 15, ${margin.top + plotHeight / 2})">Drowning deaths</text>`;
+
+      // Data points
+      data.forEach((d, i) => {
+        const cx = xScale(d.iceCream);
+        const cy = yScale(d.drowning);
+        const tempClass = iceCreamRevealed ? getTemperatureClass(d.temperature) : 'neutral';
+        svgContent += `<circle class="data-point ${tempClass}" cx="${cx}" cy="${cy}" r="5" data-icecream="${d.iceCream.toFixed(1)}" data-drowning="${d.drowning.toFixed(1)}" data-temperature="${d.temperature.toFixed(1)}" data-index="${i}"/>`;
+      });
+
+      svg.innerHTML = svgContent;
+
+      // Get all data points
+      const points = svg.querySelectorAll('.data-point');
+
+      // Tooltip handling (reusing the same tooltip element)
+      points.forEach((point) => {
+        point.addEventListener('mouseenter', (e) => {
+          const iceCream = e.target.getAttribute('data-icecream');
+          const drowning = e.target.getAttribute('data-drowning');
+          const temperature = e.target.getAttribute('data-temperature');
+
+          // Repurpose the tooltip labels
+          tooltipAvailability.textContent = iceCream;
+          tooltipAvailability.parentElement.querySelector('.viz-tooltip-label').textContent = 'Ice cream:';
+          tooltipInterest.textContent = drowning;
+          tooltipInterest.parentElement.querySelector('.viz-tooltip-label').textContent = 'Drowning:';
+
+          if (iceCreamRevealed) {
+            tooltipConfidenceRow.style.display = 'flex';
+            tooltipConfidence.textContent = temperature;
+            tooltipConfidence.parentElement.querySelector('.viz-tooltip-label').textContent = 'Temperature:';
+          } else {
+            tooltipConfidenceRow.style.display = 'none';
+          }
+
+          tooltip.classList.add('visible');
+        });
+
+        point.addEventListener('mousemove', (e) => {
+          tooltip.style.left = (e.clientX + 15) + 'px';
+          tooltip.style.top = (e.clientY - 10) + 'px';
+        });
+
+        point.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+          // Reset tooltip labels to defaults
+          tooltipAvailability.parentElement.querySelector('.viz-tooltip-label').textContent = 'Availability:';
+          tooltipInterest.parentElement.querySelector('.viz-tooltip-label').textContent = 'Interest:';
+          tooltipConfidence.parentElement.querySelector('.viz-tooltip-label').textContent = 'Confidence:';
+        });
+      });
+
+      // Scroll-triggered animation
+      let animated = container.dataset.animated === 'true';
+
+      function animateIceCreamPoints() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.8 && containerRect.bottom > 0) {
+          animated = true;
+          container.dataset.animated = 'true';
+
+          points.forEach((point, i) => {
+            setTimeout(() => {
+              point.classList.add('visible');
+            }, i * 15);
+          });
+        }
+      }
+
+      window.addEventListener('scroll', animateIceCreamPoints, { passive: true });
+      animateIceCreamPoints();
+
+      // Temperature reveal button handler
+      if (temperatureBtn && !temperatureBtn.dataset.listenerAdded) {
+        temperatureBtn.dataset.listenerAdded = 'true';
+        temperatureBtn.addEventListener('click', () => {
+          if (iceCreamRevealed) return;
+
+          iceCreamRevealed = true;
+          temperatureBtn.disabled = true;
+          temperatureBtn.textContent = 'Temperature revealed';
+
+          // Apply temperature-based coloring with staggered animation
+          points.forEach((point, i) => {
+            const temperature = parseFloat(point.getAttribute('data-temperature'));
+            setTimeout(() => {
+              point.classList.remove('neutral');
+              point.classList.add(getTemperatureClass(temperature));
+            }, i * 20);
+          });
+
+          // Show reveal label after animation
+          setTimeout(() => {
+            temperatureLabel.classList.add('visible');
+          }, points.length * 20 + 300);
+        });
+      }
+    }
+
+    // Initialize ice cream scatter plot
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createIceCreamScatterPlot);
+    } else {
+      createIceCreamScatterPlot();
+    }
+
+    // =====================
+    // Self-Selection Visualization (Section 5)
+    // =====================
+
+    // Generate 20 people with varying confidence levels
+    function generatePeople(seed) {
+      const people = [];
+      for (let i = 0; i < 20; i++) {
+        // Confidence ranges from 1 to 10
+        const confidence = 1 + seededRandom(seed + i * 5) * 9;
+        people.push({
+          id: i,
+          confidence: confidence,
+          // Initial position will be set in visualization
+          x: 0,
+          y: 0,
+          group: null,
+          coinFlip: null
+        });
+      }
+      return people;
+    }
+
+    let selfSelectionPeople = null;
+    let selfSelectionState = 'initial'; // 'initial', 'self-selected', 'randomized'
+
+    function createSelfSelectionViz() {
+      const svg = document.getElementById('selfSelectionSvg');
+      const container = document.getElementById('selfSelectionViz');
+      const randomizeBtn = document.getElementById('randomizeBtn');
+      const caption = document.getElementById('selfSelectionCaption');
+
+      if (!svg || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Generate people if not exists
+      if (!selfSelectionPeople) {
+        selfSelectionPeople = generatePeople(999);
+      }
+
+      // Layout constants
+      const leftZoneX = width * 0.18;
+      const rightZoneX = width * 0.82;
+      const zoneWidth = width * 0.32;
+      const zoneHeight = height * 0.55;
+      const zoneTop = height * 0.18;
+      const centerY = height * 0.45;
+
+      // Colors
+      const hardToGetColor = '#9b59b6';
+      const availableColor = '#4ecca3';
+
+      // Build static elements
+      let svgContent = `
+        <!-- Left zone: Plays hard to get -->
+        <rect class="group-zone" x="${leftZoneX - zoneWidth/2}" y="${zoneTop}" width="${zoneWidth}" height="${zoneHeight}" />
+        <text class="group-label" x="${leftZoneX}" y="${zoneTop - 10}">Plays hard to get</text>
+        <text class="avg-label" id="leftAvg" x="${leftZoneX}" y="${zoneTop + zoneHeight + 25}"></text>
+
+        <!-- Right zone: Doesn't play hard to get -->
+        <rect class="group-zone" x="${rightZoneX - zoneWidth/2}" y="${zoneTop}" width="${zoneWidth}" height="${zoneHeight}" />
+        <text class="group-label" x="${rightZoneX}" y="${zoneTop - 10}">Doesn't play hard to get</text>
+        <text class="avg-label" id="rightAvg" x="${rightZoneX}" y="${zoneTop + zoneHeight + 25}"></text>
+      `;
+
+      // Add person circles
+      selfSelectionPeople.forEach((person, i) => {
+        // Size based on confidence (larger = more confident)
+        const radius = 6 + (person.confidence / 10) * 8;
+        // Opacity based on confidence (brighter = more confident)
+        const opacity = 0.3 + (person.confidence / 10) * 0.7;
+
+        // Initial center position with slight random offset
+        const initialX = width / 2 + (seededRandom(999 + i * 11) - 0.5) * 60;
+        const initialY = centerY + (seededRandom(999 + i * 13) - 0.5) * 40;
+
+        svgContent += `
+          <circle class="person-circle" id="person${i}"
+            cx="${initialX}" cy="${initialY}" r="${radius}"
+            fill="#f39c12" opacity="${opacity}"
+            data-confidence="${person.confidence.toFixed(1)}"
+            data-initial-x="${initialX}" data-initial-y="${initialY}" />
+          <text class="coin-symbol" id="coin${i}" x="${initialX}" y="${initialY}" fill="rgba(240,240,240,0.9)"></text>
+        `;
+
+        person.x = initialX;
+        person.y = initialY;
+      });
+
+      svg.innerHTML = svgContent;
+
+      // Scroll-triggered animation: self-selection
+      let animated = container.dataset.animated === 'true';
+
+      function animateSelfSelection() {
+        if (animated) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (containerRect.top < viewportHeight * 0.7 && containerRect.bottom > 0) {
+          animated = true;
+          container.dataset.animated = 'true';
+
+          // Perform self-selection: confident people tend to play hard to get
+          setTimeout(() => {
+            performSelfSelection(leftZoneX, rightZoneX, zoneTop, zoneHeight, zoneWidth);
+          }, 500);
+        }
+      }
+
+      window.addEventListener('scroll', animateSelfSelection, { passive: true });
+      animateSelfSelection();
+
+      // Randomize button handler
+      if (randomizeBtn && !randomizeBtn.dataset.listenerAdded) {
+        randomizeBtn.dataset.listenerAdded = 'true';
+        randomizeBtn.addEventListener('click', () => {
+          if (selfSelectionState === 'randomized') return;
+
+          randomizeBtn.disabled = true;
+          randomizeBtn.textContent = 'Randomizing...';
+
+          performRandomization(leftZoneX, rightZoneX, zoneTop, zoneHeight, zoneWidth, caption, randomizeBtn);
+        });
+      }
+    }
+
+    function performSelfSelection(leftZoneX, rightZoneX, zoneTop, zoneHeight, zoneWidth) {
+      selfSelectionState = 'self-selected';
+
+      let leftCount = 0;
+      let rightCount = 0;
+      let leftConfidenceSum = 0;
+      let rightConfidenceSum = 0;
+
+      selfSelectionPeople.forEach((person, i) => {
+        const circle = document.getElementById(`person${i}`);
+        if (!circle) return;
+
+        // High confidence → more likely to play hard to get
+        const goesLeft = person.confidence > 5 + (seededRandom(999 + i * 17) - 0.5) * 3;
+
+        let targetX, targetY;
+
+        if (goesLeft) {
+          person.group = 'left';
+          leftCount++;
+          leftConfidenceSum += person.confidence;
+          // Position within left zone
+          const col = (leftCount - 1) % 4;
+          const row = Math.floor((leftCount - 1) / 4);
+          targetX = leftZoneX - zoneWidth/2 + 25 + col * (zoneWidth - 40) / 3;
+          targetY = zoneTop + 30 + row * 35;
+        } else {
+          person.group = 'right';
+          rightCount++;
+          rightConfidenceSum += person.confidence;
+          // Position within right zone
+          const col = (rightCount - 1) % 4;
+          const row = Math.floor((rightCount - 1) / 4);
+          targetX = rightZoneX - zoneWidth/2 + 25 + col * (zoneWidth - 40) / 3;
+          targetY = zoneTop + 30 + row * 35;
+        }
+
+        // Add slight randomness to positions
+        targetX += (seededRandom(999 + i * 19) - 0.5) * 15;
+        targetY += (seededRandom(999 + i * 23) - 0.5) * 10;
+
+        // Animate movement with stagger
+        setTimeout(() => {
+          circle.setAttribute('cx', targetX);
+          circle.setAttribute('cy', targetY);
+        }, i * 50);
+      });
+
+      // Show averages after animation completes
+      setTimeout(() => {
+        const leftAvg = document.getElementById('leftAvg');
+        const rightAvg = document.getElementById('rightAvg');
+
+        if (leftAvg && leftCount > 0) {
+          leftAvg.textContent = `Avg confidence: ${(leftConfidenceSum / leftCount).toFixed(1)}`;
+          leftAvg.classList.add('visible');
+        }
+        if (rightAvg && rightCount > 0) {
+          rightAvg.textContent = `Avg confidence: ${(rightConfidenceSum / rightCount).toFixed(1)}`;
+          rightAvg.classList.add('visible');
+        }
+      }, selfSelectionPeople.length * 50 + 500);
+    }
+
+    function performRandomization(leftZoneX, rightZoneX, zoneTop, zoneHeight, zoneWidth, caption, btn) {
+      // First, move all circles back to center with coin flips
+      const centerX = (leftZoneX + rightZoneX) / 2;
+      const centerY = zoneTop + zoneHeight / 2;
+
+      // Hide averages
+      const leftAvg = document.getElementById('leftAvg');
+      const rightAvg = document.getElementById('rightAvg');
+      if (leftAvg) leftAvg.classList.remove('visible');
+      if (rightAvg) rightAvg.classList.remove('visible');
+
+      // Move to center
+      selfSelectionPeople.forEach((person, i) => {
+        const circle = document.getElementById(`person${i}`);
+        if (!circle) return;
+
+        const initialX = parseFloat(circle.dataset.initialX);
+        const initialY = parseFloat(circle.dataset.initialY);
+
+        setTimeout(() => {
+          circle.setAttribute('cx', initialX);
+          circle.setAttribute('cy', initialY);
+        }, i * 30);
+      });
+
+      // After centering, show coin flips
+      setTimeout(() => {
+        selfSelectionPeople.forEach((person, i) => {
+          const coin = document.getElementById(`coin${i}`);
+          const circle = document.getElementById(`person${i}`);
+          if (!coin || !circle) return;
+
+          // Random coin flip
+          person.coinFlip = seededRandom(12345 + i * 7) > 0.5 ? 'H' : 'T';
+
+          const x = parseFloat(circle.getAttribute('cx'));
+          const y = parseFloat(circle.getAttribute('cy'));
+
+          coin.setAttribute('x', x);
+          coin.setAttribute('y', y);
+
+          setTimeout(() => {
+            coin.textContent = person.coinFlip;
+            coin.style.opacity = '1';
+          }, i * 40);
+        });
+      }, selfSelectionPeople.length * 30 + 300);
+
+      // After coin flips shown, redistribute
+      setTimeout(() => {
+        let leftCount = 0;
+        let rightCount = 0;
+        let leftConfidenceSum = 0;
+        let rightConfidenceSum = 0;
+
+        selfSelectionPeople.forEach((person, i) => {
+          const circle = document.getElementById(`person${i}`);
+          const coin = document.getElementById(`coin${i}`);
+          if (!circle) return;
+
+          // Hide coin
+          if (coin) {
+            setTimeout(() => {
+              coin.style.opacity = '0';
+            }, i * 20);
+          }
+
+          // Assignment based on coin flip
+          const goesLeft = person.coinFlip === 'H';
+
+          let targetX, targetY;
+
+          if (goesLeft) {
+            person.group = 'left';
+            leftCount++;
+            leftConfidenceSum += person.confidence;
+            const col = (leftCount - 1) % 4;
+            const row = Math.floor((leftCount - 1) / 4);
+            targetX = leftZoneX - zoneWidth/2 + 25 + col * (zoneWidth - 40) / 3;
+            targetY = zoneTop + 30 + row * 35;
+          } else {
+            person.group = 'right';
+            rightCount++;
+            rightConfidenceSum += person.confidence;
+            const col = (rightCount - 1) % 4;
+            const row = Math.floor((rightCount - 1) / 4);
+            targetX = rightZoneX - zoneWidth/2 + 25 + col * (zoneWidth - 40) / 3;
+            targetY = zoneTop + 30 + row * 35;
+          }
+
+          targetX += (seededRandom(12345 + i * 29) - 0.5) * 15;
+          targetY += (seededRandom(12345 + i * 31) - 0.5) * 10;
+
+          setTimeout(() => {
+            circle.setAttribute('cx', targetX);
+            circle.setAttribute('cy', targetY);
+          }, i * 50 + 200);
+        });
+
+        // Show new averages
+        setTimeout(() => {
+          if (leftAvg && leftCount > 0) {
+            leftAvg.textContent = `Avg confidence: ${(leftConfidenceSum / leftCount).toFixed(1)}`;
+            leftAvg.classList.add('visible');
+          }
+          if (rightAvg && rightCount > 0) {
+            rightAvg.textContent = `Avg confidence: ${(rightConfidenceSum / rightCount).toFixed(1)}`;
+            rightAvg.classList.add('visible');
+          }
+
+          // Update caption
+          if (caption) {
+            caption.querySelector('.viz-caption-text').textContent = 'When coins decide, confidence spreads evenly.';
+          }
+
+          // Update button
+          btn.textContent = 'Randomized';
+          selfSelectionState = 'randomized';
+        }, selfSelectionPeople.length * 50 + 800);
+
+      }, selfSelectionPeople.length * 30 + selfSelectionPeople.length * 40 + 800);
+    }
+
+    // Initialize self-selection visualization
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createSelfSelectionViz);
+    } else {
+      createSelfSelectionViz();
+    }
+  </script>
+</body>
+</html>
